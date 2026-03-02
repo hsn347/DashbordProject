@@ -6,7 +6,5 @@ build/
 .env
 .env.*
 *.log
-Dockerfile
 .dockerignore
-nginx.conf
 README.md
