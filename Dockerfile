@@ -13,7 +13,7 @@ WORKDIR /app
 COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy the rest of the project files
 COPY . .
