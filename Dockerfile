@@ -1,42 +1,38 @@
 # ==========================================
-# Stage 1: Build Image
+# Stage 1: Build
 # ==========================================
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Enable corepack for modern package managers (optional but good practice)
-# RUN corepack enable
+# Install ALL deps including devDependencies (needed for Tailwind/PostCSS/Vite)
+ENV NODE_ENV=development
 
-# Copy package files
-COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
+COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm install
+# Use npm ci for clean, reproducible installs
+RUN npm ci
 
-# Copy the rest of the project files
+# Copy source files
 COPY . .
 
-# Build the Vite project (Output typically goes to /app/dist)
+# Run Vite build
 RUN npm run build
 
 # ==========================================
-# Stage 2: Production Image (Nginx)
+# Stage 2: Production (Nginx)
 # ==========================================
 FROM nginx:stable-alpine
 
-# Remove default Nginx static assets
+# Clean default static files
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy built assets from builder stage
+# Copy built assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy custom Nginx configuration for React Router
+# Copy Nginx config (handles React Router fallback)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port (Coolify usually maps 80 to the assigned port)
 EXPOSE 80
 
-# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
