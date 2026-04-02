@@ -10,16 +10,15 @@ import AdminLayout from "./layouts/AdminLayout";
 import Login from "./pages/Login";
 
 // Client pages
-import EmulatorsPage from "./pages/client/EmulatorsPage";
-import EmulatorDetail from "./pages/client/EmulatorDetail";
+import AccountsPage from "./pages/client/AccountsPage";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import EmulatorsAdmin from "./pages/admin/EmulatorsAdmin";
+
 import SubscriptionsAdmin from "./pages/admin/SubscriptionsAdmin";
 import UserSubscriptionDetail from "./pages/admin/UserSubscriptionDetail";
 import SettingsAdmin from "./pages/admin/SettingsAdmin";
-import ExpiringEmulators from "./pages/admin/ExpiringEmulators";
+import ExpiringAccounts from "./pages/admin/ExpiringAccounts";
 
 function ProtectedRoute({ children, adminRequired = false }) {
   const { user, isAdmin, isLoading } = useAuthContext();
@@ -58,10 +57,9 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/emulators" replace />} />
-        <Route path="emulators" element={<EmulatorsPage />} />
-        <Route path="emulators/:id" element={<EmulatorDetail />} />
-        <Route path="*" element={<Navigate to="/emulators" replace />} />
+        <Route index element={<Navigate to="/accounts" replace />} />
+        <Route path="accounts" element={<AccountsPage />} />
+        <Route path="*" element={<Navigate to="/accounts" replace />} />
       </Route>
 
       {/* Admin Dashboard */}
@@ -74,10 +72,9 @@ function App() {
         }
       >
         <Route index element={<AdminDashboard />} />
-        <Route path="emulators" element={<EmulatorsAdmin />} />
         <Route path="subscriptions" element={<SubscriptionsAdmin />} />
         <Route path="subscriptions/:userId" element={<UserSubscriptionDetail />} />
-        <Route path="expiring-emulators" element={<ExpiringEmulators />} />
+        <Route path="expiring-accounts" element={<ExpiringAccounts />} />
         <Route path="settings" element={<SettingsAdmin />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>

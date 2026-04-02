@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase111 } from "../lib/supabaseq";
+import { supabase } from "../lib/supabase";
 
 const fetchProfile = async (userId) => {
-    const { data, error } = await supabase111
+    const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", userId)

@@ -1,225 +1,121 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 import {
-    CreditCard, CheckCircle2, XCircle, ChevronDown, ChevronUp,
-    Monitor, User, Search, X, Users, Server, Hash,
-    TrendingUp, AlertCircle, RefreshCw, ExternalLink
+    CreditCard, CheckCircle2, XCircle, User,
+    Search, X, Users, RefreshCw, ExternalLink, Settings2, Save,
+    Trash2, AlertCircle, Calendar
 } from "lucide-react";
-import { useGetSubscriptions, useToggleSubscription } from "../../hooks/useSubscriptions";
-import { useGetAllEmulators } from "../../hooks/useAdminEmulators";
+import { useGetSubscriptions } from "../../hooks/useSubscriptions";
+import {
+    useGetAllAccounts,
+    useGetAllAdminUsers,
+    useUpdateUserAllowedAccounts,
+    useDeleteUserAdmin,
+    useUpdateAllAccountsDate,
+    useCancelAllAccountsApproval
+} from "../../hooks/useAdminAccounts";
 import { useLanguage } from "../../Context/LanguageContext";
 
-const CURRENT_YEAR = new Date().getFullYear();
-const CURRENT_MONTH = new Date().getMonth(); // 0-indexed
-
-function getMonthKey(year, monthIndex) {
-    return `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
-}
-
-// ─── بطاقة شهر واحد ────────────────────────────────────────────────────────
-function MonthCell({ month, monthKey, paid, onToggle, isPending }) {
-    return (
-        <button
-            onClick={() => onToggle(monthKey, paid)}
-            disabled={isPending}
-            title={paid === true ? "مدفوع — انقر للتغيير" : paid === false ? "غير مدفوع — انقر للتغيير" : "غير مسجل — انقر لتسجيل دفع"}
-            style={{
-                padding: "0.6rem 0.4rem",
-                borderRadius: "var(--radius-sm)",
-                border: `1.5px solid ${paid === true ? "var(--green)" : paid === false ? "rgba(239,68,68,0.45)" : "var(--border)"}`,
-                background: paid === true ? "var(--green-soft)" : paid === false ? "var(--red-soft)" : "var(--bg-surface)",
-                cursor: isPending ? "not-allowed" : "pointer",
-                transition: "all 0.18s",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "0.3rem",
-                opacity: isPending ? 0.6 : 1,
-            }}
-        >
-            {paid === true
-                ? <CheckCircle2 size={16} color="var(--green)" />
-                : paid === false
-                    ? <XCircle size={16} color="var(--red)" />
-                    : <CreditCard size={16} color="var(--text-muted)" />
-            }
-            <span style={{
-                fontSize: "0.72rem",
-                fontWeight: 600,
-                color: paid === true ? "var(--green)" : paid === false ? "var(--red)" : "var(--text-muted)",
-            }}>
-                {month}
-            </span>
-        </button>
-    );
-}
-
-// ─── بطاقة محاكي واحد ──────────────────────────────────────────────────────
-function EmulatorSubCard({ emulator, allSubs }) {
+function UserQuotaEditor({ userId, currentQuota, ownerName }) {
     const { t } = useLanguage();
-    const MONTHS = t("months");
-    const [year, setYear] = useState(CURRENT_YEAR);
-    const toggle = useToggleSubscription();
+    const updateQuota = useUpdateUserAllowedAccounts();
+    const [isEditing, setIsEditing] = useState(false);
+    const [val, setVal] = useState(String(currentQuota || 0));
 
-    const emSubs = allSubs.filter((s) => s.emulator_id === emulator.id);
-
-    const getPaid = (key) => {
-        const sub = emSubs.find((s) => s.month === key);
-        return sub ? sub.is_paid : null;
+    const handleSave = () => {
+        let parsed = parseInt(val, 10);
+        if (isNaN(parsed) || parsed < 0) parsed = 0;
+        updateQuota.mutate(
+            { userId, allowedAccounts: parsed },
+            {
+                onSuccess: () => {
+                    setIsEditing(false);
+                    setVal(String(parsed));
+                }
+            }
+        );
     };
 
-    const handleToggle = (monthKey, currentPaid) => {
-        toggle.mutate({
-            emulatorId: emulator.id,
-            month: monthKey,
-            currentPaid,
-            userId: emulator.user_id,
-        });
-    };
-
-    const paidCount = MONTHS.filter((_, i) => getPaid(getMonthKey(year, i)) === true).length;
-    const unpaidCount = MONTHS.filter((_, i) => getPaid(getMonthKey(year, i)) === false).length;
+    if (!isEditing) {
+        return (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "var(--bg-card)", padding: "0.25rem 0.5rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>{t("quota")}:</span>
+                <span style={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.85rem" }}>{currentQuota || 0}</span>
+                <button
+                    onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                    className="btn btn-ghost"
+                    style={{ padding: "0.2rem", height: "auto", color: "var(--text-muted)" }}
+                    title={t("edit")}
+                >
+                    <Settings2 size={13} />
+                </button>
+            </div>
+        );
+    }
 
     return (
-        <div style={{
-            background: "var(--bg-base)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-md)",
-            overflow: "hidden",
-        }}>
-            {/* Header */}
-            <div style={{
-                padding: "0.875rem 1rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: "0.75rem",
-                borderBottom: "1px solid var(--border)",
-                background: "var(--bg-surface)",
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-                    <div style={{
-                        width: 36, height: 36,
-                        borderRadius: "var(--radius-sm)",
-                        background: emulator.Is_OK === "true" ? "var(--green-soft)" : "var(--bg-surface)",
-                        border: `1.5px solid ${emulator.Is_OK === "true" ? "var(--green)" : "var(--border)"}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                        <Monitor size={16} color={emulator.Is_OK === "true" ? "var(--green)" : "var(--text-muted)"} />
-                    </div>
-                    <div>
-                        <div style={{ fontWeight: 700, fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                            {t("emulator")} #{emulator.id}
-                            <span style={{
-                                fontSize: "0.65rem", fontWeight: 700,
-                                padding: "0.1rem 0.45rem", borderRadius: "999px",
-                                background: emulator.Is_OK === "true" ? "var(--green-soft)" : "var(--red-soft)",
-                                color: emulator.Is_OK === "true" ? "var(--green)" : "var(--red)",
-                                border: `1px solid ${emulator.Is_OK === "true" ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`,
-                            }}>
-                                {emulator.Is_OK === "true" ? `✓ ${t("approved")}` : `✗ ${t("pending")}`}
-                            </span>
-                            {emulator.Date_OK && (
-                                <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontWeight: 500 }}>
-                                    {new Date(emulator.Date_OK).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                                </span>
-                            )}
-                        </div>
-                        {emulator.index_server && (
-                            <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", display: "flex", gap: "0.4rem" }}>
-                                <span style={{ display: "flex", alignItems: "center", gap: "0.2rem" }}>
-                                    <Server size={10} /> {t("indexServer")} {emulator.index_server}
-                                </span>
-                                <span style={{ display: "flex", alignItems: "center", gap: "0.2rem" }}>
-                                    <Hash size={10} /> {t("indexEmulator")} {emulator.index_emulators}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-                    {/* Paid / Unpaid badges */}
-                    {paidCount > 0 && (
-                        <span style={{
-                            fontSize: "0.72rem", fontWeight: 700,
-                            padding: "0.2rem 0.6rem", borderRadius: "999px",
-                            background: "var(--green-soft)", color: "var(--green)",
-                            border: "1px solid rgba(16,185,129,0.3)"
-                        }}>
-                            ✓ {paidCount} {t("paid")}
-                        </span>
-                    )}
-                    {unpaidCount > 0 && (
-                        <span style={{
-                            fontSize: "0.72rem", fontWeight: 700,
-                            padding: "0.2rem 0.6rem", borderRadius: "999px",
-                            background: "var(--red-soft)", color: "var(--red)",
-                            border: "1px solid rgba(239,68,68,0.3)"
-                        }}>
-                            ✗ {unpaidCount} {t("unpaid")}
-                        </span>
-                    )}
-
-                    {/* Year nav */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                        <button className="btn btn-ghost" style={{ padding: "0.2rem 0.45rem", fontSize: "0.8rem" }} onClick={() => setYear(y => y - 1)}>‹</button>
-                        <span style={{ fontWeight: 700, minWidth: 40, textAlign: "center", fontSize: "0.8rem" }}>{year}</span>
-                        <button className="btn btn-ghost" style={{ padding: "0.2rem 0.45rem", fontSize: "0.8rem" }} onClick={() => setYear(y => y + 1)}>›</button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Months grid */}
-            <div className="months-grid">
-                {MONTHS.map((month, i) => {
-                    const key = getMonthKey(year, i);
-                    const paid = getPaid(key);
-                    // Highlight current month
-                    const isCurrent = year === CURRENT_YEAR && i === CURRENT_MONTH;
-                    return (
-                        <div key={key} style={{ position: "relative" }}>
-                            {isCurrent && (
-                                <div style={{
-                                    position: "absolute", top: -4, left: "50%", transform: "translateX(-50%)",
-                                    width: 6, height: 6, borderRadius: "50%",
-                                    background: "var(--accent)", zIndex: 1,
-                                }} />
-                            )}
-                            <MonthCell
-                                month={month}
-                                monthKey={key}
-                                paid={paid}
-                                onToggle={handleToggle}
-                                isPending={toggle.isPending}
-                            />
-                        </div>
-                    );
-                })}
-            </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }} onClick={(e) => e.stopPropagation()}>
+            <input
+                type="number"
+                min="0"
+                className="form-input"
+                style={{ width: 60, padding: "0.2rem 0.4rem", fontSize: "0.8rem", height: 28 }}
+                value={val}
+                onChange={(e) => setVal(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSave();
+                    if (e.key === "Escape") { setIsEditing(false); setVal(String(currentQuota || 0)); }
+                }}
+            />
+            <button
+                onClick={handleSave}
+                disabled={updateQuota.isPending}
+                className="btn btn-success"
+                style={{ padding: "0.2rem 0.4rem", height: 28 }}
+            >
+                <Save size={13} />
+            </button>
+            <button
+                onClick={() => { setIsEditing(false); setVal(String(currentQuota || 0)); }}
+                className="btn btn-ghost"
+                style={{ padding: "0.2rem 0.4rem", height: 28 }}
+            >
+                <X size={13} />
+            </button>
         </div>
     );
 }
 
-// ─── بطاقة مستخدم كاملة ────────────────────────────────────────────────────
-function UserSubscriptionCard({ userId, ownerName, emulators, allSubs }) {
-    const { t } = useLanguage();
+function UserSubscriptionCard({ user, accounts, allSubs, onDelete }) {
+    const { t, fmtDate } = useLanguage();
     const navigate = useNavigate();
+    const updateGlobalDate = useUpdateAllAccountsDate();
+    const cancelApproval = useCancelAllAccountsApproval();
+
+    // Find the common approval date for the user's accounts
+    const userAccountsDate = useMemo(() => {
+        const approved = accounts.filter(a => a.Is_OK && a.Date_OK);
+        if (approved.length === 0) return null;
+        // Just return the first one as representative
+        return approved[0].Date_OK;
+    }, [accounts]);
 
     const totalPaid = useMemo(() => {
-        return emulators.reduce((acc, em) => {
-            return acc + allSubs.filter((s) => s.emulator_id === em.id && s.is_paid === true).length;
+        return accounts.reduce((acc, a) => {
+            return acc + allSubs.filter((s) => s.account_id === a.id && s.is_paid === true).length;
         }, 0);
-    }, [emulators, allSubs]);
+    }, [accounts, allSubs]);
 
     const totalUnpaid = useMemo(() => {
-        return emulators.reduce((acc, em) => {
-            return acc + allSubs.filter((s) => s.emulator_id === em.id && s.is_paid === false).length;
+        return accounts.reduce((acc, a) => {
+            return acc + allSubs.filter((s) => s.account_id === a.id && s.is_paid === false).length;
         }, 0);
-    }, [emulators, allSubs]);
+    }, [accounts, allSubs]);
 
-    const hasAlert = totalUnpaid > 0;
+    const pendingAccounts = accounts.filter(a => !a.Is_OK).length;
+    const hasAlert = totalUnpaid > 0 || pendingAccounts > 0;
 
     return (
         <div
@@ -230,7 +126,7 @@ function UserSubscriptionCard({ userId, ownerName, emulators, allSubs }) {
                 transition: "border-color 0.2s, box-shadow 0.2s, transform 0.15s",
                 cursor: "pointer",
             }}
-            onClick={() => navigate(`/admin/subscriptions/${userId}`)}
+            onClick={() => navigate(`/admin/subscriptions/${user.id}`)}
             onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15)";
                 e.currentTarget.style.transform = "translateY(-1px)";
@@ -240,7 +136,6 @@ function UserSubscriptionCard({ userId, ownerName, emulators, allSubs }) {
                 e.currentTarget.style.transform = "";
             }}
         >
-            {/* ── User Header Row ── */}
             <div style={{
                 padding: "1.1rem 1.25rem",
                 display: "flex",
@@ -249,7 +144,6 @@ function UserSubscriptionCard({ userId, ownerName, emulators, allSubs }) {
                 gap: "1rem",
                 flexWrap: "wrap",
             }}>
-                {/* Left: avatar + name */}
                 <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
                     <div style={{
                         width: 44, height: 44, borderRadius: "50%",
@@ -259,16 +153,59 @@ function UserSubscriptionCard({ userId, ownerName, emulators, allSubs }) {
                         fontSize: "1.2rem", fontWeight: 800, color: hasAlert ? "var(--red)" : "var(--accent)",
                         flexShrink: 0,
                     }}>
-                        {ownerName?.charAt(0).toUpperCase() || "？"}
+                        {user.displayName.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                        <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--text-primary)", marginBottom: "0.15rem" }}>
-                            {ownerName}
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
+                            <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--text-primary)" }}>
+                                {user.displayName}
+                            </div>
+                            {userAccountsDate && (
+                                <div style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.3rem",
+                                    fontSize: "0.7rem",
+                                    color: accounts.every(a => a.Is_OK) ? "var(--green)" : "var(--text-muted)",
+                                    fontWeight: 700,
+                                    background: accounts.every(a => a.Is_OK) ? "var(--green-soft)" : "var(--bg-hover)",
+                                    padding: "0.2rem 0.6rem",
+                                    borderRadius: "999px",
+                                    border: `1px solid ${accounts.every(a => a.Is_OK) ? "rgba(16,185,129,0.2)" : "var(--border)"}`
+                                }}>
+                                    <Calendar size={12} />
+                                    {fmtDate(userAccountsDate)}
+                                </div>
+                            )}
+                            {user.isApprovedComp && (
+                                <div style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.3rem",
+                                    fontSize: "0.7rem",
+                                    color: "white",
+                                    fontWeight: 800,
+                                    background: "var(--accent)",
+                                    padding: "0.2rem 0.6rem",
+                                    borderRadius: "999px",
+                                    boxShadow: "0 2px 6px rgba(108, 99, 255, 0.25)"
+                                }}>
+                                    <Check size={12} strokeWidth={4} />
+                                    مستخدم معتمد
+                                </div>
+                            )}
+                            <UserQuotaEditor userId={user.id} currentQuota={user.allowedAccounts} ownerName={user.displayName} />
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", flexWrap: "wrap" }}>
                             <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                                <Monitor size={12} /> {emulators.length} {t("emulators")}
+                                <User size={12} /> {accounts.length} {t("accounts")}
                             </span>
+                            {pendingAccounts > 0 && (
+                                <span style={{ fontSize: "0.7rem", color: "var(--gold)", background: "var(--gold-soft)", padding: "0.1rem 0.4rem", borderRadius: "999px", fontWeight: 700 }}>
+                                    {pendingAccounts} بإنتظار الاعتماد
+                                </span>
+                            )}
                             <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
                                 <CreditCard size={12} /> {totalPaid + totalUnpaid} {t("records")}
                             </span>
@@ -276,28 +213,91 @@ function UserSubscriptionCard({ userId, ownerName, emulators, allSubs }) {
                     </div>
                 </div>
 
-                {/* Right: Summary badges */}
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <div style={{ textAlign: "end", marginLeft: "0.75rem" }}>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.1rem" }}>{t("status")}</div>
-                        <div style={{ display: "flex", gap: "0.4rem" }}>
-                            {totalPaid > 0 && (
-                                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--green)" }}>{totalPaid} {t("paidAbbr")}</span>
-                            )}
-                            {totalUnpaid > 0 ? (
-                                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--red)" }}>{totalUnpaid} {t("unpaidAbbr")}</span>
-                            ) : (
-                                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--green)" }}>{t("allPaid")}</span>
-                            )}
+                <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.625rem",
+                    marginLeft: t("dir") === "ltr" ? "auto" : "unset",
+                    marginRight: t("dir") === "rtl" ? "auto" : "unset",
+                    paddingTop: "0.5rem"
+                }}>
+                    <div style={{ textAlign: "end", marginLeft: "0.5rem", marginRight: "0.5rem", display: "none", minWidth: "80px" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.1rem" }}>{t("status")}</div>
+                        <div style={{ display: "flex", gap: "0.3rem", justifyContent: "flex-end" }}>
+                            {totalPaid > 0 && <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--green)" }}>{totalPaid}P</span>}
+                            {totalUnpaid > 0 && <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--red)" }}>{totalUnpaid}U</span>}
                         </div>
                     </div>
-                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--bg-hover)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>
-                        <ExternalLink size={15} />
+
+                    {/* Approve All Button */}
+                    <button
+                        className="btn"
+                        style={{
+                            width: 38, height: 38, borderRadius: "var(--radius-sm)", padding: 0,
+                            background: "var(--green-soft)", color: "var(--green)",
+                            border: "1px solid rgba(16,185,129,0.2)",
+                            boxShadow: "0 2px 8px rgba(16,185,129,0.08)"
+                        }}
+                        title="اعتماد كافة حسابات المستخدم (تأريخ اليوم)"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`هل أنت متأكد من رغبتك في اعتماد كافة حسابات ${user.displayName} بتأريخ اليوم؟`)) {
+                                updateGlobalDate.mutate({
+                                    userId: user.id,
+                                    date: new Date().toISOString().split("T")[0]
+                                });
+                            }
+                        }}
+                        disabled={updateGlobalDate.isPending || cancelApproval.isPending}
+                    >
+                        {updateGlobalDate.isPending ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <CheckCircle2 size={18} />}
+                    </button>
+
+                    {/* Cancel Approval All Button */}
+                    <button
+                        className="btn"
+                        style={{
+                            width: 38, height: 38, borderRadius: "var(--radius-sm)", padding: 0,
+                            background: "var(--gold-soft)", color: "var(--gold)",
+                            border: "1px solid rgba(245,158,11,0.2)",
+                            boxShadow: "0 2px 8px rgba(245,158,11,0.08)"
+                        }}
+                        title="إلغاء اعتماد كافة حسابات المستخدم"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`هل أنت متأكد من رغبتك في إلغاء اعتماد كافة حسابات ${user.displayName}؟`)) {
+                                cancelApproval.mutate(user.id);
+                            }
+                        }}
+                        disabled={cancelApproval.isPending || updateGlobalDate.isPending}
+                    >
+                        {cancelApproval.isPending ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <XCircle size={18} />}
+                    </button>
+
+                    {/* Delete button */}
+                    <button
+                        className="btn"
+                        style={{
+                            width: 38, height: 38, borderRadius: "var(--radius-sm)", padding: 0,
+                            background: "var(--red-soft)", color: "var(--red)",
+                            border: "1px solid rgba(239,68,68,0.2)",
+                            boxShadow: "0 2px 8px rgba(239,68,68,0.08)"
+                        }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(user, accounts.length);
+                        }}
+                        disabled={updateGlobalDate.isPending || cancelApproval.isPending}
+                    >
+                        <Trash2 size={18} />
+                    </button>
+
+                    <div style={{ width: 38, height: 38, borderRadius: "var(--radius-sm)", background: "var(--bg-hover)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", cursor: "pointer" }}>
+                        <ExternalLink size={16} />
                     </div>
                 </div>
             </div>
 
-            {/* ── Visual Progress Bar ── */}
             <div style={{ height: 3, width: "100%", background: "var(--border)", display: "flex" }}>
                 <div style={{ height: "100%", background: "var(--green)", width: `${(totalPaid / (totalPaid + totalUnpaid || 1)) * 100}%`, transition: "width 0.3s" }} />
                 <div style={{ height: "100%", background: "var(--red)", width: `${(totalUnpaid / (totalPaid + totalUnpaid || 1)) * 100}%`, transition: "width 0.3s" }} />
@@ -306,129 +306,108 @@ function UserSubscriptionCard({ userId, ownerName, emulators, allSubs }) {
     );
 }
 
-
-// ─── الصفحة الرئيسية ────────────────────────────────────────────────────────
 export default function SubscriptionsAdmin() {
-    const navigate = useNavigate();
-    const { t, refetch: langRefetch } = useLanguage();
+    const { t } = useLanguage();
 
     const { data: subscriptions, isLoading: subLoading, refetch: subRefetch } = useGetSubscriptions();
-    const { data: emulators, isLoading: emLoading, refetch: emRefetch } = useGetAllEmulators();
+    const { data: accounts, isLoading: accLoading, refetch: accRefetch } = useGetAllAccounts();
+    const { data: adminUsers, isLoading: usersLoading, refetch: usersRefetch } = useGetAllAdminUsers();
+
+    const isLoading = subLoading || accLoading || usersLoading;
 
     const refetch = () => {
         subRefetch();
-        emRefetch();
+        accRefetch();
+        usersRefetch();
     };
 
-    const isLoading = subLoading || emLoading;
-
-    // ── فلاتر ──
     const [search, setSearch] = useState("");
-    const [filterApproval, setFilterApproval] = useState("all"); // all, approved, pending
-    const [filterStatus, setFilterStatus] = useState("all"); // all, has_unpaid, all_paid, no_subs
+    const [filterApproval, setFilterApproval] = useState("all");
+    const [filterStatus, setFilterStatus] = useState("all");
+    const [userToDelete, setUserToDelete] = useState(null);
+    const deleteUser = useDeleteUserAdmin();
 
-    // ── تجميع المحاكيات حسب المستخدم ──
-    const usersMap = useMemo(() => {
-        const map = new Map();
-        (emulators || []).forEach((em) => {
-            if (!em.user_id) return;
-            if (!map.has(em.user_id)) {
-                map.set(em.user_id, {
-                    userId: em.user_id,
-                    ownerName: em.ownerName || em.user_id.slice(0, 8),
-                    emulators: [],
-                });
-            }
-            map.get(em.user_id).emulators.push(em);
+    // Map accounts to users
+    const usersWithAccounts = useMemo(() => {
+        if (!adminUsers) return [];
+        return adminUsers.map(user => {
+            const userAccs = (accounts || []).filter(a => a.user_id === user.id);
+            return {
+                ...user,
+                accounts: userAccs
+            };
         });
-        return [...map.values()];
-    }, [emulators]);
+    }, [adminUsers, accounts]);
 
-    // ── البحث ──
     const searchLower = search.trim().toLowerCase();
     const allSubs = subscriptions || [];
 
     const filtered = useMemo(() => {
-        return usersMap.filter((u) => {
-            // فلترة البحث: بالاسم أو بالحسابات
+        return usersWithAccounts.filter((u) => {
             if (searchLower) {
-                const nameMatch = u.ownerName.toLowerCase().includes(searchLower);
-                const accountMatch = allSubs.some((s) =>
-                    u.emulators.some((em) => em.id === s.emulator_id) &&
-                    JSON.stringify(s).toLowerCase().includes(searchLower)
-                );
-                if (!nameMatch && !accountMatch) return false;
+                const nameMatch = u.displayName.toLowerCase().includes(searchLower) || u.email.toLowerCase().includes(searchLower);
+                if (!nameMatch) return false;
             }
 
-            // فلترة الاعتماد
             if (filterApproval === "approved") {
-                if (!u.emulators.some((em) => em.Is_OK === "true")) return false;
+                if (!u.accounts.some((a) => a.Is_OK)) return false;
             }
             if (filterApproval === "pending") {
-                if (!u.emulators.some((em) => em.Is_OK !== "true")) return false;
+                if (!u.accounts.some((a) => !a.Is_OK)) return false;
             }
 
-            // فلترة الحالة
             if (filterStatus === "has_unpaid") {
                 const unpaid = allSubs.filter((s) =>
-                    u.emulators.some((em) => em.id === s.emulator_id) && s.is_paid === false
+                    u.accounts.some((a) => a.id === s.account_id) && s.is_paid === false
                 );
                 if (unpaid.length === 0) return false;
             }
             if (filterStatus === "all_paid") {
                 const unpaid = allSubs.filter((s) =>
-                    u.emulators.some((em) => em.id === s.emulator_id) && s.is_paid === false
+                    u.accounts.some((a) => a.id === s.account_id) && s.is_paid === false
                 );
                 const hasSubs = allSubs.some((s) =>
-                    u.emulators.some((em) => em.id === s.emulator_id)
+                    u.accounts.some((a) => a.id === s.account_id)
                 );
                 if (unpaid.length > 0 || !hasSubs) return false;
             }
             if (filterStatus === "no_subs") {
                 const hasSubs = allSubs.some((s) =>
-                    u.emulators.some((em) => em.id === s.emulator_id)
+                    u.accounts.some((a) => a.id === s.account_id)
                 );
                 if (hasSubs) return false;
             }
 
             return true;
         });
-    }, [usersMap, allSubs, searchLower, filterApproval, filterStatus]);
+    }, [usersWithAccounts, allSubs, searchLower, filterApproval, filterStatus]);
 
-    // ── إحصائيات عامة ──
     const stats = useMemo(() => {
         const totalPaid = allSubs.filter((s) => s.is_paid === true).length;
         const totalUnpaid = allSubs.filter((s) => s.is_paid === false).length;
-        const usersWithUnpaid = usersMap.filter((u) =>
-            allSubs.some((s) => u.emulators.some((em) => em.id === s.emulator_id) && !s.is_paid)
+        const usersWithUnpaid = usersWithAccounts.filter((u) =>
+            allSubs.some((s) => u.accounts.some((a) => a.id === s.account_id) && !s.is_paid)
         ).length;
-        return { totalPaid, totalUnpaid, usersWithUnpaid };
-    }, [allSubs, usersMap]);
+        const totalAccounts = (accounts || []).length;
+        return { totalPaid, totalUnpaid, usersWithUnpaid, totalAccounts };
+    }, [allSubs, usersWithAccounts, accounts]);
 
     return (
         <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-
-            {/* ── Header ── */}
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
                 <div>
-                    <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.25rem" }}>{t("الاشتراك الشهري")}</h1>
-                    <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
-                        {t("followUpPayments")} · {usersMap.length} {t("usersAbbr")} · {(emulators || []).filter(e => e.Is_OK === "true").length} {t("approvedEmulatorsAbbr")}
-                    </p>
+                    <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.25rem" }}>إدارة المستخدمين والاشتراكات</h1>
                 </div>
                 <button className="btn btn-secondary" style={{ gap: "0.5rem" }} onClick={() => refetch()}>
                     <RefreshCw size={15} /> {t("refresh")}
                 </button>
             </div>
 
-            {/* ── Stats cards ── */}
             {!isLoading && (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.875rem" }}>
                     {[
-                        { label: t("paidMonths"), value: stats.totalPaid, color: "var(--green)", bg: "var(--green-soft)", icon: <CheckCircle2 size={18} color="var(--green)" /> },
-                        { label: t("unpaidMonths"), value: stats.totalUnpaid, color: "var(--red)", bg: "var(--red-soft)", icon: <XCircle size={18} color="var(--red)" /> },
-                        { label: t("usersWithLatePayments"), value: stats.usersWithUnpaid, color: "var(--gold)", bg: "var(--gold-soft)", icon: <AlertCircle size={18} color="var(--gold)" /> },
-                        { label: t("totalUsers"), value: usersMap.length, color: "var(--accent)", bg: "var(--accent-soft)", icon: <Users size={18} color="var(--accent)" /> },
+                        { label: t("totalUsers"), value: usersWithAccounts.length, color: "var(--accent)", bg: "var(--accent-soft)", icon: <Users size={18} color="var(--accent)" /> },
+                        { label: t("accounts"), value: stats.totalAccounts, color: "var(--purple)", bg: "var(--purple-soft)", icon: <User size={18} color="var(--purple)" /> },
                     ].map((s) => (
                         <div key={s.label} className="card" style={{ padding: "1rem 1.25rem", display: "flex", alignItems: "center", gap: "0.875rem" }}>
                             <div style={{ width: 40, height: 40, borderRadius: "var(--radius-sm)", background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -443,15 +422,13 @@ export default function SubscriptionsAdmin() {
                 </div>
             )}
 
-            {/* ── Search + Filters ── */}
             <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-                {/* Row 1: Search */}
                 <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
                     <div style={{ position: "relative", flex: "1 1 240px", maxWidth: 380 }}>
                         <Search size={15} color="var(--text-muted)" style={{ position: "absolute", left: t("dir") === "rtl" ? "unset" : "0.75rem", right: t("dir") === "rtl" ? "0.75rem" : "unset", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
                         <input
                             className="form-input"
-                            placeholder={t("searchPlaceholderAdmin")}
+                            placeholder="ابحث عن مستخدم (الاسم، الإيميل)..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             dir={t("dir")}
@@ -471,14 +448,11 @@ export default function SubscriptionsAdmin() {
                     </div>
                 </div>
 
-                {/* Row 2: Approval filter + Status filter */}
                 <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
-                    {/* Divider label */}
-                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 600 }}>{t("approval")}:</span>
                     {[
-                        { key: "approved", label: `✓ ${t("approvedOnly")}` },
-                        { key: "pending", label: `✗ ${t("pendingOnly")}` },
                         { key: "all", label: t("all") },
+                        { key: "approved", label: `حسابات معتمدة` },
+                        { key: "pending", label: `حسابات معلقة` },
                     ].map(({ key, label }) => (
                         <button
                             key={key}
@@ -495,75 +469,83 @@ export default function SubscriptionsAdmin() {
                         </button>
                     ))}
 
-                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 600, margin: "0 0.25rem" }}>|</span>
-                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 600 }}>{t("payment")}:</span>
-
-                    {/* Status filter */}
-                    {[
-                        { key: "all", label: `${t("all")} (${usersMap.length})` },
-                        { key: "has_unpaid", label: `${t("unpaidAbbr")} (${stats.usersWithUnpaid})` },
-                        { key: "all_paid", label: t("allPaid") },
-                        { key: "no_subs", label: t("noRecords") },
-                    ].map(({ key, label }) => (
-                        <button
-                            key={key}
-                            onClick={() => setFilterStatus(key)}
-                            className="btn"
-                            style={{
-                                background: filterStatus === key ? "var(--accent)" : "var(--bg-card)",
-                                color: filterStatus === key ? "white" : "var(--text-secondary)",
-                                border: `1px solid ${filterStatus === key ? "var(--accent)" : "var(--border)"}`,
-                                fontSize: "0.8rem",
-                            }}
-                        >
-                            {label}
-                        </button>
-                    ))}
                 </div>
             </div>
 
-
-            {/* ── Loading ── */}
             {isLoading && (
                 <div className="page-loader">
                     <div className="spinner" style={{ width: 32, height: 32 }} />
-                    <p>{t("loadingSubs")}</p>
+                    <p>جاري تحميل المستخدمين والاشتراكات...</p>
                 </div>
             )}
 
-            {/* ── Empty state ── */}
-            {!isLoading && usersMap.length === 0 && (
+            {!isLoading && usersWithAccounts.length === 0 && (
                 <div style={{ textAlign: "center", padding: "3rem 2rem", border: "2px dashed var(--border)", borderRadius: "var(--radius-lg)" }}>
-                    <CreditCard size={44} color="var(--text-muted)" style={{ margin: "0 auto 1rem", display: "block" }} />
-                    <h3 style={{ fontWeight: 700, marginBottom: "0.5rem" }}>{t("noApprovedEmulators")}</h3>
-                    <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>{t("approveFirstToShow")}</p>
+                    <Users size={44} color="var(--text-muted)" style={{ margin: "0 auto 1rem", display: "block" }} />
+                    <h3 style={{ fontWeight: 700, marginBottom: "0.5rem" }}>لا يوجد مستخدمين مسجلين</h3>
                 </div>
             )}
 
-            {/* ── No search results ── */}
-            {!isLoading && usersMap.length > 0 && filtered.length === 0 && (
+            {!isLoading && usersWithAccounts.length > 0 && filtered.length === 0 && (
                 <div style={{ textAlign: "center", padding: "2.5rem 2rem", border: "2px dashed var(--border)", borderRadius: "var(--radius-lg)" }}>
                     <Search size={36} color="var(--text-muted)" style={{ margin: "0 auto 0.75rem", display: "block" }} />
                     <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>{t("noResultsFor")} "{search || filterStatus}"</p>
-                    <button className="btn btn-ghost" style={{ marginTop: "0.75rem", fontSize: "0.825rem" }} onClick={() => { setSearch(""); setFilterStatus("all"); }}>
+                    <button className="btn btn-ghost" style={{ marginTop: "0.75rem", fontSize: "0.825rem" }} onClick={() => { setSearch(""); setFilterStatus("all"); setFilterApproval("all"); }}>
                         {t("clearFilters")}
                     </button>
                 </div>
             )}
 
-            {/* ── Users list ── */}
             {!isLoading && filtered.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
                     {filtered.map((u) => (
                         <UserSubscriptionCard
-                            key={u.userId}
-                            userId={u.userId}
-                            ownerName={u.ownerName}
-                            emulators={u.emulators}
+                            key={u.id}
+                            user={u}
+                            accounts={u.accounts}
                             allSubs={allSubs}
+                            onDelete={(user, accCount) => setUserToDelete({ ...user, accCount })}
                         />
                     ))}
                 </div>
+            )}
+
+            {/* Global Confirmation Modal for Deletion - Using Portal to escape CSS transforms */}
+            {userToDelete && createPortal(
+                <div className="modal-backdrop" onClick={() => setUserToDelete(null)}>
+                    <div
+                        className="modal-box"
+                        style={{ padding: "2.5rem 2rem", textAlign: "center" }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <AlertCircle size={54} color="var(--red)" style={{ margin: "0 auto 1.25rem", display: "block", opacity: 0.9 }} />
+                        <h3 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: "0.75rem" }}>
+                            تأكيد حذف المستخدم نهائياً؟
+                        </h3>
+                        <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", lineHeight: 1.6, marginBottom: "2rem" }}>
+                            هل أنت متأكد من رغبتك في حذف <strong>{userToDelete.displayName}</strong>؟ <br />
+                            سيتم تنزيل إجراء الحذف على <span style={{ color: "var(--red)", fontWeight: 700 }}>جميع حساباته الـ {userToDelete.accCount}</span> وكافة الاشتراكات المرتبطة به.
+                        </p>
+                        <div style={{ display: "flex", gap: "1rem" }}>
+                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setUserToDelete(null)}>
+                                {t("cancel")}
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                style={{ flex: 1, padding: "0.75rem" }}
+                                disabled={deleteUser.isPending}
+                                onClick={() => {
+                                    deleteUser.mutate(userToDelete.id, {
+                                        onSuccess: () => setUserToDelete(null)
+                                    });
+                                }}
+                            >
+                                {deleteUser.isPending ? "جاري الحذف..." : "نعم، حذف المستخدم"}
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
             )}
         </div>
     );

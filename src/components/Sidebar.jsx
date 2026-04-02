@@ -1,12 +1,12 @@
 import { NavLink } from "react-router-dom";
-import { Monitor, X } from "lucide-react";
+import { User as UserIcon, X } from "lucide-react";
 import { useLanguage } from "../Context/LanguageContext";
 
 export default function Sidebar({ open, onClose }) {
     const { t } = useLanguage();
 
     const clientLinks = [
-        { to: "/emulators", icon: Monitor, labelKey: "emulators" },
+        { to: "/accounts", icon: UserIcon, labelKey: "accounts" },
     ];
 
     return (

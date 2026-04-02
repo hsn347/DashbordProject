@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Monitor, CreditCard, Settings, X, ShieldCheck, Clock } from "lucide-react";
+import { LayoutDashboard, User as UserIcon, CreditCard, Settings, X, ShieldCheck, Clock } from "lucide-react";
 import { useLanguage } from "../Context/LanguageContext";
 
 export default function AdminSidebar({ open, onClose }) {
@@ -7,9 +7,8 @@ export default function AdminSidebar({ open, onClose }) {
 
     const adminLinks = [
         { to: "/admin", icon: LayoutDashboard, labelKey: "overview", exact: true },
-        { to: "/admin/emulators", icon: Monitor, labelKey: "emulators" },
         { to: "/admin/subscriptions", icon: CreditCard, labelKey: "subscriptions" },
-        { to: "/admin/expiring-emulators", icon: Clock, labelKey: "expiringEmulators" },
+        { to: "/admin/expiring-accounts", icon: Clock, labelKey: "expiringAccounts" },
         { to: "/admin/settings", icon: Settings, labelKey: "settings" },
     ];
 

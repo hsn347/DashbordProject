@@ -4,7 +4,7 @@
 const translations = {
     ar: {
         // ── عام ──
-        appName: "لعبة العثمانية",
+        appName: "IBRAA BOT",
         loading: "جاري التحميل...",
         save: "حفظ",
         cancel: "إلغاء",
@@ -13,6 +13,9 @@ const translations = {
         refresh: "تحديث",
         back: "رجوع",
         search: "بحث",
+        searchPlaceholder: "بحث...",
+        searchByEmail: "البحث بالبريد الإلكتروني",
+        searchByEmailPlaceholder: "أدخل البريد الإلكتروني للبحث...",
         filter: "تصفية",
         all: "الكل",
         yes: "نعم",
@@ -99,6 +102,7 @@ const translations = {
         noAccounts: "لا توجد حسابات",
         addAccountHint: "أضف أول حساب لهذا المحاكي",
         resources: "الموارد",
+        collectResources: "جمع الموارد",
         attackResources: "موارد الهجوم",
         wheat: "قمح",
         iron: "حديد",
@@ -107,6 +111,18 @@ const translations = {
         protection: "درع",
         troops: "جنود",
         dontBuy: "عدم الشراء",
+        animalToTrain: "الحيوان",
+        noAnimal: "لا يوجد / اختر الحيوان",
+        animal: "الحيوان",
+        deer: "الغزال",
+        wolf: "الذئب",
+        lion: "الاسد",
+        falcon: "الصقر",
+        cheetah: "الفهد",
+        bear: "الدب",
+        elephant: "الفيل",
+        bull: "الثور",
+        dog: "الكلب",
 
         // ── Emulators Admin ──
         allEmulators: "جميع المحاكيات",
@@ -188,7 +204,7 @@ const translations = {
 
     en: {
         // ── General ──
-        appName: "Ottoman Game",
+        appName: "IBRAA BOT",
         loading: "Loading...",
         save: "Save",
         cancel: "Cancel",
@@ -197,6 +213,9 @@ const translations = {
         refresh: "Refresh",
         back: "Back",
         search: "Search",
+        searchPlaceholder: "Search...",
+        searchByEmail: "Search by Email",
+        searchByEmailPlaceholder: "Enter email to search...",
         filter: "Filter",
         all: "All",
         yes: "Yes",
@@ -283,6 +302,7 @@ const translations = {
         noAccounts: "No accounts",
         addAccountHint: "Add the first account for this emulator",
         resources: "Resources",
+        collectResources: "Collect Resources",
         attackResources: "Attack Resources",
         wheat: "Wheat",
         iron: "Iron",
@@ -291,6 +311,18 @@ const translations = {
         protection: "Shield",
         troops: "Troops",
         dontBuy: "Don't Buy",
+        animalToTrain: "Animal",
+        noAnimal: "None / Select an animal",
+        animal: "Animal",
+        deer: "Deer",
+        wolf: "Wolf",
+        lion: "Lion",
+        falcon: "Falcon",
+        cheetah: "Cheetah",
+        bear: "Bear",
+        elephant: "Elephant",
+        bull: "Bull",
+        dog: "Dog",
 
         // ── Emulators Admin ──
         allEmulators: "All Emulators",
@@ -372,7 +404,7 @@ const translations = {
 
     tr: {
         // ── Genel ──
-        appName: "Osmanlı Oyunu",
+        appName: "IBRAA BOT",
         loading: "Yükleniyor...",
         save: "Kaydet",
         cancel: "İptal",
@@ -381,6 +413,9 @@ const translations = {
         refresh: "Yenile",
         back: "Geri",
         search: "Ara",
+        searchPlaceholder: "Ara...",
+        searchByEmail: "E-postaya Göre Ara",
+        searchByEmailPlaceholder: "Aramak için e-posta girin...",
         filter: "Filtrele",
         all: "Tümü",
         yes: "Evet",
@@ -467,6 +502,7 @@ const translations = {
         noAccounts: "Hesap yok",
         addAccountHint: "Bu emülatöre ilk hesabı ekleyin",
         resources: "Kaynaklar",
+        collectResources: "Kaynakları Topla",
         attackResources: "Saldırı Kaynakları",
         wheat: "Buğday",
         iron: "Demir",
@@ -475,6 +511,18 @@ const translations = {
         protection: "Kalkan",
         troops: "Askerler",
         dontBuy: "Satın Alma",
+        animalToTrain: "Hayvan",
+        noAnimal: "Yok / Hayvan Seçin",
+        animal: "Hayvan",
+        deer: "Geyik",
+        wolf: "Kurt",
+        lion: "Aslan",
+        falcon: "Şahin",
+        cheetah: "Çita",
+        bear: "Ayı",
+        elephant: "Fil",
+        bull: "Boğa",
+        dog: "Köpek",
 
         // ── Emulators Admin ──
         allEmulators: "Tüm Emülatörler",

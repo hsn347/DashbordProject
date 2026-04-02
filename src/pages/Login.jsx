@@ -44,6 +44,11 @@ export default function Login() {
         options: { data: { display_name: name } },
       });
       if (error) throw error;
+      const { data: d, error: error2 } = await supabase.from("profiles").update({
+        username: email,
+        full_name: name
+      }).eq("id", data.user.id)
+      if (error2) throw error;
       return data;
     },
     onSuccess: () => { toast.success(t("signupSuccess")); setMode("login"); },
@@ -129,14 +134,6 @@ export default function Login() {
           <button onClick={() => setMode(mode === "login" ? "signup" : "login")} style={{ background: "none", border: "none", color: "var(--accent)", fontWeight: 700, cursor: "pointer", fontSize: "0.875rem" }}>
             {mode === "login" ? t("signup") : t("login")}
           </button>
-        </div>
-
-        {/* Admin hint */}
-        <div style={{ marginTop: "1.5rem", padding: "0.75rem 1rem", background: "var(--gold-soft)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Shield size={14} color="var(--gold)" />
-          <span style={{ color: "var(--gold)", fontSize: "0.75rem" }}>
-            {t("adminOnlyHint")}
-          </span>
         </div>
       </div>
     </div>

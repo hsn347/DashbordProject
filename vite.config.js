@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true, // مهم جداً ليتمكن Docker من الوصول للسيرفر
-    port: 3000,
+    port: 5173,
     watch: {
       usePolling: true, // ضروري إذا كنت تستخدم Windows وتريد انعكاس التغييرات فوراً داخل Docker
     },

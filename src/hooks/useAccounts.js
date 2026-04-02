@@ -3,35 +3,38 @@ import { supabase } from "../lib/supabase";
 import { useAuthContext } from "../Context/AuthContext";
 import { toast } from "sonner";
 
-export function useGetAccounts(emulatorId) {
+export function useGetAccounts() {
+    const { user } = useAuthContext();
     return useQuery({
-        queryKey: ["accounts", emulatorId],
+        queryKey: ["accounts"],
         queryFn: async () => {
             const { data, error } = await supabase
                 .from("Accounts")
                 .select("*")
-                .eq("Id_Emulators", String(emulatorId))
-                .order("created_at", { ascending: true });
+                .eq("user_id", String(user.id))
+                .order("created_at", { ascending: false });
             if (error) throw error;
             return data;
         },
-        enabled: !!emulatorId,
+        enabled: !!user?.id,
     });
 }
 
 export function useAddAccount() {
     const { user } = useAuthContext();
+
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ emulatorId, email, password, collect_resources, attack_resources, protection, troops, not_store }) => {
-            // Check 10-account limit
-            const { count, error: countErr } = await supabase
-                .from("Accounts")
-                .select("id", { count: "exact", head: true })
-                .eq("Id_Emulators", String(emulatorId));
-            if (countErr) throw countErr;
-            if (count >= 10) throw new Error("الحد الأقصى هو 10 حسابات لكل محاكي.");
+        mutationFn: async ({ email, password, collect_resources, attack_resources, protection, troops, not_store, animal }) => {
+            const { count, error2 } = await supabase.from("Accounts").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("Is_OK", true);
+            const { data: profile, error3 } = await supabase
+                .from("profiles")
+                .select("allowed_accounts, Is_COMP") // لاحظ الفاصلة داخل النص
+                .eq("id", user.id)
+                .single();
 
+            const aaa = profile.Is_COMP == true && profile.allowed_accounts > count ? true : false;
+            const bbb = profile.Is_COMP == true && profile.allowed_accounts > count ? new Date().toISOString() : null;
             const { data, error } = await supabase
                 .from("Accounts")
                 .insert({
@@ -42,18 +45,29 @@ export function useAddAccount() {
                     Protection: protection,
                     Troops: troops,
                     Not_store: not_store,
-                    Is_OK: false,
+                    animal: animal,
+                    Is_OK: aaa,
                     user_id: String(user.id),
-                    Id_Emulators: String(emulatorId),
+                    Date_OK: bbb,
+                    Id_Emulators: null,// No longer using emulators
                 })
                 .select()
                 .single();
             if (error) throw error;
+
+            // Trigger auto-approval logic for this user
+            if (profile.Is_COMP == true && profile.allowed_accounts > count) {
+                try {
+                    await supabase.rpc("reindex_accounts_v2");
+                } catch (rpcErr) {
+                    console.warn("Auto-approve RPC failed:", rpcErr);
+                }
+            }
             return data;
         },
-        onSuccess: (_data, vars) => {
-            queryClient.invalidateQueries({ queryKey: ["accounts", vars.emulatorId] });
-            toast.success("تم إضافة الحساب بنجاح.");
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["accounts"] });
+            toast.success("تم إضافة الحساب بنجاح. وجاري فحصه تلقائياً للقبول.");
         },
         onError: (err) => toast.error(err.message || "فشل إضافة الحساب"),
     });
@@ -62,7 +76,7 @@ export function useAddAccount() {
 export function useUpdateAccount() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, emulatorId, ...fields }) => {
+        mutationFn: async ({ id, ...fields }) => {
             const { error } = await supabase
                 .from("Accounts")
                 .update({
@@ -73,33 +87,43 @@ export function useUpdateAccount() {
                     Protection: fields.protection,
                     Troops: fields.troops,
                     Not_store: fields.not_store,
+                    animal: fields.animal,
                 })
                 .eq("id", id);
             if (error) throw error;
         },
-        onSuccess: (_data, vars) => {
-            queryClient.invalidateQueries({ queryKey: ["accounts", vars.emulatorId] });
-            toast.success("تم تحديث الحساب.");
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["accounts"] });
+            toast.success("تم تحديث الحساب بنجاح.");
         },
-        onError: (err) => toast.error(err.message || "فشل التحديث"),
+        onError: (err) => toast.error(err.message || "فشل تحديث الحساب"),
     });
 }
 
 export function useDeleteAccount() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, emulatorId }) => {
+        mutationFn: async ({ id }) => {
             const { error } = await supabase
                 .from("Accounts")
                 .delete()
                 .eq("id", id);
             if (error) throw error;
-            return emulatorId;
+
+            // Re-run auto approval to potentially accept the next pending account
+            const { data: userData } = await supabase.auth.getUser();
+            if (userData?.user?.id) {
+                try {
+                    await supabase.rpc("auto_approve_user_accounts", { p_user_id: userData.user.id });
+                } catch (rpcErr) {
+                    console.warn("Auto-approve RPC failed:", rpcErr);
+                }
+            }
         },
-        onSuccess: (_data, vars) => {
-            queryClient.invalidateQueries({ queryKey: ["accounts", vars.emulatorId] });
-            toast.success("تم حذف الحساب.");
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["accounts"] });
+            toast.success("تم حذف الحساب بنجاح.");
         },
-        onError: (err) => toast.error(err.message || "فشل الحذف"),
+        onError: (err) => toast.error(err.message || "فشل حذف الحساب"),
     });
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { supabase111 } from "../lib/supabaseq";
+import { supabase } from "../lib/supabase";
 
 
 const ProtectedRoute = () => {
@@ -9,13 +9,13 @@ const ProtectedRoute = () => {
 
   useEffect(() => {
     // 1. فحص الجلسة عند التحميل
-    supabase111.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
     });
 
     // 2. الاستماع لأي تغيير في حالة تسجيل الدخول (Logout/Login)
-    const { data: { subscription } } = supabase111.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
 
