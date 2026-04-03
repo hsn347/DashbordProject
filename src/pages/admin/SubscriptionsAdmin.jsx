@@ -300,7 +300,6 @@ function UserSubscriptionCard({ user, accounts, allSubs, onDelete }) {
                             if (window.confirm(`هل أنت متأكد من رغبتك في اعتماد كافة حسابات ${user.displayName} بتأريخ اليوم؟`)) {
                                 updateGlobalDate.mutate({
                                     userId: user.id,
-                                    date: new Date().toISOString().split("T")[0]
                                 });
                             }
                         }}

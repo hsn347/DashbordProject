@@ -243,8 +243,8 @@ export function useGetAllAdminUsers() {
                 if (profErr) throw profErr;
 
                 profilesMap = Object.fromEntries(
-                    (profiles || []).map(p => [p.id, { 
-                        quota: p.allowed_accounts || 0, 
+                    (profiles || []).map(p => [p.id, {
+                        quota: p.allowed_accounts || 0,
                         isComp: !!p.Is_COMP,
                         dateExpire: p.Date_expier,
                         dateOk: p.Date_OK
@@ -307,20 +307,27 @@ export function useDeleteUserAdmin() {
 export function useUpdateAllAccountsDate() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ userId, date }) => {
+        mutationFn: async ({ userId }) => {
+
             // 1. Get the allowance quota for this user from profiles
             const { data: profile, error: pErr } = await supabaseAdmin
                 .from("profiles")
-                .select("allowed_accounts, Is_COMP")
+                .select("allowed_accounts, Is_COMP ,Date_OK")
                 .eq("id", userId)
                 .single();
             if (pErr) throw pErr;
             const quota = profile.allowed_accounts || 0;
+            let date;
+            if (profile.Is_COMP == false) {
+                date = new Date().toISOString().split("T")[0];
+            } else {
+                date = profile.Date_OK || new Date().toISOString().split("T")[0];
+            }
 
             // Update user global status
             await supabaseAdmin
                 .from("profiles")
-                .update({ Is_COMP: true })
+                .update({ Is_COMP: true, Date_OK: date })
                 .eq("id", userId);
 
             // 2. Get all accounts for this user sorted by seniority (created_at)
