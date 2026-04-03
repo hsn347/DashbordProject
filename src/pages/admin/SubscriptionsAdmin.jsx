@@ -1,21 +1,89 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
     CreditCard, CheckCircle2, XCircle, User,
     Search, X, Users, RefreshCw, ExternalLink, Settings2, Save,
-    Trash2, AlertCircle, Calendar
+    Trash2, AlertCircle, Calendar, Check
 } from "lucide-react";
-import { useGetSubscriptions } from "../../hooks/useSubscriptions";
 import {
     useGetAllAccounts,
     useGetAllAdminUsers,
     useUpdateUserAllowedAccounts,
     useDeleteUserAdmin,
     useUpdateAllAccountsDate,
-    useCancelAllAccountsApproval
+    useCancelAllAccountsApproval,
+    useUpdateUserExpiryDate
 } from "../../hooks/useAdminAccounts";
 import { useLanguage } from "../../Context/LanguageContext";
+
+function UserExpiryEditor({ userId, currentDateExpire }) {
+    const { t } = useLanguage();
+    const updateExpiry = useUpdateUserExpiryDate();
+    const [isEditing, setIsEditing] = useState(false);
+    const [val, setVal] = useState(currentDateExpire ? currentDateExpire.split("T")[0] : "");
+
+    const handleSave = () => {
+        updateExpiry.mutate(
+            { userId, dateExpire: val || null },
+            {
+                onSuccess: () => {
+                    setIsEditing(false);
+                }
+            }
+        );
+    };
+
+    if (!isEditing) {
+        const isExpired = currentDateExpire && new Date(currentDateExpire) < new Date();
+        return (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: isExpired ? "var(--red-soft)" : "var(--bg-card)", padding: "0.25rem 0.5rem", borderRadius: "var(--radius-sm)", border: `1px solid ${isExpired ? "var(--red)" : "var(--border)"}` }}>
+                <span style={{ fontSize: "0.75rem", color: isExpired ? "var(--red)" : "var(--text-muted)", fontWeight: 600 }}>انتهاء:</span>
+                <span style={{ fontWeight: 800, color: isExpired ? "var(--red)" : "var(--text-primary)", fontSize: "0.85rem" }}>{currentDateExpire ? currentDateExpire.split("T")[0] : "—"}</span>
+                <button
+                    onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                    className="btn btn-ghost"
+                    style={{ padding: "0.2rem", height: "auto", color: "var(--text-muted)" }}
+                    title={t("edit")}
+                >
+                    <Settings2 size={13} />
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }} onClick={(e) => e.stopPropagation()}>
+            <input
+                type="date"
+                className="form-input"
+                style={{ width: 120, padding: "0.2rem 0.4rem", fontSize: "0.8rem", height: 28 }}
+                value={val}
+                onChange={(e) => setVal(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSave();
+                    if (e.key === "Escape") { setIsEditing(false); setVal(currentDateExpire ? currentDateExpire.split("T")[0] : ""); }
+                }}
+            />
+            <button
+                onClick={handleSave}
+                disabled={updateExpiry.isPending}
+                className="btn btn-success"
+                style={{ padding: "0.2rem 0.4rem", height: 28 }}
+            >
+                <Save size={13} />
+            </button>
+            <button
+                onClick={() => { setIsEditing(false); setVal(currentDateExpire ? currentDateExpire.split("T")[0] : ""); }}
+                className="btn btn-ghost"
+                style={{ padding: "0.2rem 0.4rem", height: 28 }}
+            >
+                <X size={13} />
+            </button>
+        </div>
+    );
+}
 
 function UserQuotaEditor({ userId, currentQuota, ownerName }) {
     const { t } = useLanguage();
@@ -102,20 +170,9 @@ function UserSubscriptionCard({ user, accounts, allSubs, onDelete }) {
         return approved[0].Date_OK;
     }, [accounts]);
 
-    const totalPaid = useMemo(() => {
-        return accounts.reduce((acc, a) => {
-            return acc + allSubs.filter((s) => s.account_id === a.id && s.is_paid === true).length;
-        }, 0);
-    }, [accounts, allSubs]);
-
-    const totalUnpaid = useMemo(() => {
-        return accounts.reduce((acc, a) => {
-            return acc + allSubs.filter((s) => s.account_id === a.id && s.is_paid === false).length;
-        }, 0);
-    }, [accounts, allSubs]);
-
     const pendingAccounts = accounts.filter(a => !a.Is_OK).length;
-    const hasAlert = totalUnpaid > 0 || pendingAccounts > 0;
+    const isExpired = user.dateExpire && new Date(user.dateExpire) < new Date();
+    const hasAlert = pendingAccounts > 0 || isExpired;
 
     return (
         <div
@@ -195,6 +252,7 @@ function UserSubscriptionCard({ user, accounts, allSubs, onDelete }) {
                                 </div>
                             )}
                             <UserQuotaEditor userId={user.id} currentQuota={user.allowedAccounts} ownerName={user.displayName} />
+                            <UserExpiryEditor userId={user.id} currentDateExpire={user.dateExpire} />
                         </div>
 
                         <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", flexWrap: "wrap" }}>
@@ -206,9 +264,11 @@ function UserSubscriptionCard({ user, accounts, allSubs, onDelete }) {
                                     {pendingAccounts} بإنتظار الاعتماد
                                 </span>
                             )}
-                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                                <CreditCard size={12} /> {totalPaid + totalUnpaid} {t("records")}
-                            </span>
+                            {user.dateExpire && (
+                                <span style={{ fontSize: "0.75rem", color: isExpired ? "var(--red)" : "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem", fontWeight: isExpired ? 700 : 400 }}>
+                                    <Calendar size={12} /> انتهاء: {fmtDate(user.dateExpire)}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -223,10 +283,6 @@ function UserSubscriptionCard({ user, accounts, allSubs, onDelete }) {
                 }}>
                     <div style={{ textAlign: "end", marginLeft: "0.5rem", marginRight: "0.5rem", display: "none", minWidth: "80px" }}>
                         <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.1rem" }}>{t("status")}</div>
-                        <div style={{ display: "flex", gap: "0.3rem", justifyContent: "flex-end" }}>
-                            {totalPaid > 0 && <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--green)" }}>{totalPaid}P</span>}
-                            {totalUnpaid > 0 && <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--red)" }}>{totalUnpaid}U</span>}
-                        </div>
                     </div>
 
                     {/* Approve All Button */}
@@ -298,10 +354,7 @@ function UserSubscriptionCard({ user, accounts, allSubs, onDelete }) {
                 </div>
             </div>
 
-            <div style={{ height: 3, width: "100%", background: "var(--border)", display: "flex" }}>
-                <div style={{ height: "100%", background: "var(--green)", width: `${(totalPaid / (totalPaid + totalUnpaid || 1)) * 100}%`, transition: "width 0.3s" }} />
-                <div style={{ height: "100%", background: "var(--red)", width: `${(totalUnpaid / (totalPaid + totalUnpaid || 1)) * 100}%`, transition: "width 0.3s" }} />
-            </div>
+
         </div>
     );
 }
@@ -309,14 +362,12 @@ function UserSubscriptionCard({ user, accounts, allSubs, onDelete }) {
 export default function SubscriptionsAdmin() {
     const { t } = useLanguage();
 
-    const { data: subscriptions, isLoading: subLoading, refetch: subRefetch } = useGetSubscriptions();
     const { data: accounts, isLoading: accLoading, refetch: accRefetch } = useGetAllAccounts();
     const { data: adminUsers, isLoading: usersLoading, refetch: usersRefetch } = useGetAllAdminUsers();
 
-    const isLoading = subLoading || accLoading || usersLoading;
+    const isLoading = accLoading || usersLoading;
 
     const refetch = () => {
-        subRefetch();
         accRefetch();
         usersRefetch();
     };
@@ -340,8 +391,6 @@ export default function SubscriptionsAdmin() {
     }, [adminUsers, accounts]);
 
     const searchLower = search.trim().toLowerCase();
-    const allSubs = subscriptions || [];
-
     const filtered = useMemo(() => {
         return usersWithAccounts.filter((u) => {
             if (searchLower) {
@@ -350,47 +399,24 @@ export default function SubscriptionsAdmin() {
             }
 
             if (filterApproval === "approved") {
-                if (!u.accounts.some((a) => a.Is_OK)) return false;
+                if (!u.isApprovedComp) return false;
             }
             if (filterApproval === "pending") {
-                if (!u.accounts.some((a) => !a.Is_OK)) return false;
+                if (u.isApprovedComp && u.accounts.every(a => a.Is_OK)) return false;
             }
-
-            if (filterStatus === "has_unpaid") {
-                const unpaid = allSubs.filter((s) =>
-                    u.accounts.some((a) => a.id === s.account_id) && s.is_paid === false
-                );
-                if (unpaid.length === 0) return false;
-            }
-            if (filterStatus === "all_paid") {
-                const unpaid = allSubs.filter((s) =>
-                    u.accounts.some((a) => a.id === s.account_id) && s.is_paid === false
-                );
-                const hasSubs = allSubs.some((s) =>
-                    u.accounts.some((a) => a.id === s.account_id)
-                );
-                if (unpaid.length > 0 || !hasSubs) return false;
-            }
-            if (filterStatus === "no_subs") {
-                const hasSubs = allSubs.some((s) =>
-                    u.accounts.some((a) => a.id === s.account_id)
-                );
-                if (hasSubs) return false;
+            if (filterApproval === "expired") {
+                if (!u.dateExpire || new Date(u.dateExpire) >= new Date()) return false;
             }
 
             return true;
         });
-    }, [usersWithAccounts, allSubs, searchLower, filterApproval, filterStatus]);
+    }, [usersWithAccounts, searchLower, filterApproval]);
 
     const stats = useMemo(() => {
-        const totalPaid = allSubs.filter((s) => s.is_paid === true).length;
-        const totalUnpaid = allSubs.filter((s) => s.is_paid === false).length;
-        const usersWithUnpaid = usersWithAccounts.filter((u) =>
-            allSubs.some((s) => u.accounts.some((a) => a.id === s.account_id) && !s.is_paid)
-        ).length;
         const totalAccounts = (accounts || []).length;
-        return { totalPaid, totalUnpaid, usersWithUnpaid, totalAccounts };
-    }, [allSubs, usersWithAccounts, accounts]);
+        const expiredUsers = usersWithAccounts.filter(u => u.dateExpire && new Date(u.dateExpire) < new Date()).length;
+        return { totalAccounts, expiredUsers };
+    }, [usersWithAccounts, accounts]);
 
     return (
         <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
@@ -453,15 +479,16 @@ export default function SubscriptionsAdmin() {
                         { key: "all", label: t("all") },
                         { key: "approved", label: `حسابات معتمدة` },
                         { key: "pending", label: `حسابات معلقة` },
+                        { key: "expired", label: `منتهية الاشتراك` },
                     ].map(({ key, label }) => (
                         <button
                             key={key}
                             onClick={() => setFilterApproval(key)}
                             className="btn"
                             style={{
-                                background: filterApproval === key ? (key === "pending" ? "var(--red)" : key === "approved" ? "var(--green)" : "var(--accent)") : "var(--bg-card)",
+                                background: filterApproval === key ? (key === "pending" || key === "expired" ? "var(--red)" : key === "approved" ? "var(--green)" : "var(--accent)") : "var(--bg-card)",
                                 color: filterApproval === key ? "white" : "var(--text-secondary)",
-                                border: `1px solid ${filterApproval === key ? (key === "pending" ? "var(--red)" : key === "approved" ? "var(--green)" : "var(--accent)") : "var(--border)"}`,
+                                border: `1px solid ${filterApproval === key ? (key === "pending" || key === "expired" ? "var(--red)" : key === "approved" ? "var(--green)" : "var(--accent)") : "var(--border)"}`,
                                 fontSize: "0.8rem",
                             }}
                         >
@@ -503,7 +530,6 @@ export default function SubscriptionsAdmin() {
                             key={u.id}
                             user={u}
                             accounts={u.accounts}
-                            allSubs={allSubs}
                             onDelete={(user, accCount) => setUserToDelete({ ...user, accCount })}
                         />
                     ))}

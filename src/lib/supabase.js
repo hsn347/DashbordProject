@@ -14,6 +14,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Admin client bypasses RLS — only used in admin hooks
 export const supabaseAdmin = supabaseServiceRoleKey
     ? createClient(supabaseUrl, supabaseServiceRoleKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
+        auth: { 
+            persistSession: false, 
+            autoRefreshToken: false,
+            storageKey: "supabase-admin-auth-token" // Fixes Warning: Multiple GoTrueClient instances
+        },
     })
     : supabase; // fallback to anon client if key not set

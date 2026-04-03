@@ -134,12 +134,24 @@ export default function AdminDashboard() {
         return list;
     }, [accounts, filterStatus, search]);
 
+    const parsedServersConfig = useMemo(() => {
+        if (!settings || !settings.servers_config) return [];
+        try {
+            return JSON.parse(settings.servers_config);
+        } catch {
+            return [];
+        }
+    }, [settings]);
+
+    const totalSlots = parsedServersConfig.reduce((acc, s) => acc + parseInt(s.capacity || 0), 0);
+    const totalServersConfigured = parsedServersConfig.length;
+
     const stats = [
         { label: t("totalAccounts") || "الحسابات إجمالاً", value: total, sub: `${approved} معتمد · ${pending} انتظار`, icon: UserIcon, color: "var(--accent)", bg: "var(--accent-soft)" },
         { label: t("approvedAccounts") || "حسابات معتمدة", value: approved, sub: `${Math.round(approved / (total || 1) * 100)}% من الإجمالي`, icon: CheckCircle2, color: "var(--green)", bg: "var(--green-soft)" },
         { label: t("waitingAccounts") || "حسابات بالانتظار", value: pending, sub: pending > 0 ? "بانتظار المراجعة" : "لا يوجد انتظار", icon: Clock, color: "var(--gold)", bg: "var(--gold-soft)" },
         { label: t("users"), value: uniqueUsers, sub: `مستخدم نشط`, icon: Users, color: "#a78bfa", bg: "rgba(167,139,250,0.15)" },
-        { label: t("activeServers"), value: usedServers, sub: `${parseInt(settings?.total_servers || 3)} متاح`, icon: Server, color: "var(--orange)", bg: "var(--orange-soft)" },
+        { label: t("activeServers"), value: usedServers, sub: `${totalServersConfigured} تمت إضافتهم`, icon: Server, color: "var(--orange)", bg: "var(--orange-soft)" },
     ];
 
     return (
@@ -165,20 +177,22 @@ export default function AdminDashboard() {
                             <Activity size={14} color="var(--accent)" /> استخدام السيرفرات
                         </span>
                         <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
-                            {approved} / {Object.keys(serverMap).length * parseInt(settings?.max_per_server || 8)} مقعد
+                            {approved} / {totalSlots > 0 ? totalSlots : "..."} مقعد
                         </span>
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                        {Object.entries(serverMap).sort(([a], [b]) => +a - +b).map(([srv, info]) => {
-                            const cap = parseInt(settings?.max_per_server || 8);
-                            const pct = Math.round((info.count / cap) * 100);
+                        {parsedServersConfig.map((srvInfo) => {
+                            const srvName = srvInfo.name;
+                            const count = serverMap[srvName] ? serverMap[srvName].count : 0;
+                            const cap = parseInt(srvInfo.capacity || 8);
+                            const pct = Math.round((count / cap) * 100) || 0;
                             const bar = pct >= 90 ? "var(--red)" : pct >= 70 ? "var(--gold)" : "var(--green)";
                             return (
-                                <div key={srv}>
+                                <div key={srvName}>
                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
-                                        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>سيرفر {srv}</span>
-                                        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{info.count}/{cap} مكان مشغول</span>
+                                        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>سيرفر {srvName}</span>
+                                        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{count}/{cap} مكان مشغول</span>
                                     </div>
                                     <div style={{ height: 6, background: "var(--bg-hover)", borderRadius: 999 }}>
                                         <div style={{ height: "100%", width: `${Math.min(pct, 100)}%`, background: bar, borderRadius: 999, transition: "width 0.5s" }} />
@@ -186,7 +200,7 @@ export default function AdminDashboard() {
                                 </div>
                             );
                         })}
-                        {Object.keys(serverMap).length === 0 && (
+                        {parsedServersConfig.length === 0 && (
                             <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>لا توجد حسابات معتمدة بعد.</p>
                         )}
                     </div>

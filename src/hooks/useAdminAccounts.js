@@ -163,6 +163,26 @@ export function useUpdateUserAllowedAccounts() {
     });
 }
 
+export function useUpdateUserExpiryDate() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ userId, dateExpire }) => {
+            const { error } = await supabaseAdmin
+                .from("profiles")
+                .update({ Date_expier: dateExpire || null })
+                .eq("id", userId);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["admin-users-profiles"] });
+            toast.success("تم تحديث تاريخ انتهاء الاشتراك بنجاح.");
+        },
+        onError: (err) => toast.error(err.message || "فشل تحديث تاريخ الانتهاء"),
+    });
+}
+
+
+
 /* حاليا لم يستخدم */
 export function useForceAutoApprove() {
     const queryClient = useQueryClient();
@@ -219,11 +239,16 @@ export function useGetAllAdminUsers() {
                 // Fetch Profiles (for allowed_accounts)
                 const { data: profiles, error: profErr } = await supabaseAdmin
                     .from("profiles")
-                    .select("id, allowed_accounts");
+                    .select("id, allowed_accounts, Is_COMP, Date_expier, Date_OK");
                 if (profErr) throw profErr;
 
                 profilesMap = Object.fromEntries(
-                    (profiles || []).map(p => [p.id, { quota: p.allowed_accounts || 0, isComp: !!p.Is_COMP }])
+                    (profiles || []).map(p => [p.id, { 
+                        quota: p.allowed_accounts || 0, 
+                        isComp: !!p.Is_COMP,
+                        dateExpire: p.Date_expier,
+                        dateOk: p.Date_OK
+                    }])
                 );
             } catch (err) {
                 console.error("Error fetching admin users:", err);
@@ -237,6 +262,8 @@ export function useGetAllAdminUsers() {
                 displayName: u.user_metadata?.display_name || u.email || u.id.slice(0, 8),
                 allowedAccounts: profilesMap[u.id] ? profilesMap[u.id].quota : 0,
                 isApprovedComp: profilesMap[u.id] ? profilesMap[u.id].isComp : false,
+                dateExpire: profilesMap[u.id] ? profilesMap[u.id].dateExpire : null,
+                dateOkProfile: profilesMap[u.id] ? profilesMap[u.id].dateOk : null,
                 createdAt: u.created_at,
             })).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         },

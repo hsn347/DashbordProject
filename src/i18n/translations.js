@@ -4,7 +4,7 @@
 const translations = {
     ar: {
         // ── عام ──
-        appName: "IBRAA BOT",
+        appName: "IBRA~♕",
         loading: "جاري التحميل...",
         save: "حفظ",
         cancel: "إلغاء",
@@ -204,7 +204,7 @@ const translations = {
 
     en: {
         // ── General ──
-        appName: "IBRAA BOT",
+        appName: "IBRA~♕",
         loading: "Loading...",
         save: "Save",
         cancel: "Cancel",
@@ -404,7 +404,7 @@ const translations = {
 
     tr: {
         // ── Genel ──
-        appName: "IBRAA BOT",
+        appName: "IBRA~♕",
         loading: "Yükleniyor...",
         save: "Kaydet",
         cancel: "İptal",

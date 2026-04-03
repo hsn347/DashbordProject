@@ -9,13 +9,18 @@ export function useGetSubscriptions() {
             const { data, error } = await supabaseAdmin
                 .from("subscriptions")
                 .select(`*, Accounts(id, user_id, index_server, Is_OK, Email)`)
-                .order("account_id", { ascending: true });
+                .order("emulator_id", { ascending: true }); // Use emulator_id since the column wasn't renamed in DB
 
             if (error) {
-                console.error("Subscription query error (did you rename emulator_id to account_id in subscriptions table?):", error);
+                console.error("Subscription query error:", error);
                 throw error;
             }
-            return data;
+            
+            // Map emulator_id to account_id for backward compatibility with frontend components expecting account_id
+            return data.map(sub => ({
+                ...sub,
+                account_id: sub.emulator_id 
+            }));
         },
     });
 }
@@ -35,7 +40,7 @@ export function useToggleSubscription() {
 
                 const { error } = await supabaseAdmin.from("subscriptions").insert({
                     user_id: acc.user_id,
-                    account_id: accountId,
+                    emulator_id: accountId, // DB uses emulator_id
                     month,
                     is_paid: true,
                     paid_at: new Date().toISOString(),
@@ -46,7 +51,7 @@ export function useToggleSubscription() {
                 const { error } = await supabaseAdmin
                     .from("subscriptions")
                     .update({ is_paid: true, paid_at: new Date().toISOString() })
-                    .eq("account_id", accountId)
+                    .eq("emulator_id", accountId) // DB uses emulator_id
                     .eq("month", month);
                 if (error) throw error;
             } else {
@@ -54,7 +59,7 @@ export function useToggleSubscription() {
                 const { error } = await supabaseAdmin
                     .from("subscriptions")
                     .update({ is_paid: false, paid_at: null })
-                    .eq("account_id", accountId)
+                    .eq("emulator_id", accountId) // DB uses emulator_id
                     .eq("month", month);
                 if (error) throw error;
             }
