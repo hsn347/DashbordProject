@@ -61,12 +61,6 @@ function AccountRow({ acc }) {
                                 <Server size={12} /> {acc.index_server}
                             </div>
                         </div>
-                        <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", marginBottom: "0.15rem" }}>{t("indexEmulator")}</div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.2rem", color: "var(--gold)", fontWeight: 800, fontSize: "1rem" }}>
-                                <Hash size={12} /> {acc.index_emulators}
-                            </div>
-                        </div>
                     </div>
                 )}
 

@@ -11,6 +11,7 @@ const FULL_SETUP_SQL = `
 --  يرجى نسخ هذا الكود وتنفيذه في SQL Editor
 -- =========================================================================
 
+-- دالة الترقيم: تخزن رقم الأولوية (priority) في index_server
 CREATE OR REPLACE FUNCTION reindex_accounts_v2()
 RETURNS void AS $$
 DECLARE
@@ -18,7 +19,7 @@ DECLARE
     v_servers JSONB;
     v_server_rec RECORD;
     
-    v_current_s_name TEXT;
+    v_current_s_pri INT;
     v_current_s_cap INT;
     v_current_used INT := 0;
     
@@ -30,7 +31,7 @@ BEGIN
         v_servers := '[{"name": "Server 1", "capacity": 10, "priority": 1}]'::jsonb;
     END IF;
 
-    UPDATE "Accounts" SET index_server = NULL, index_emulators = NULL WHERE "Is_OK" = false OR "Is_OK" IS NULL;
+    UPDATE "Accounts" SET index_server = NULL WHERE "Is_OK" = false OR "Is_OK" IS NULL;
 
     CREATE TEMP TABLE IF NOT EXISTS tmp_srvs (
         s_name TEXT, s_cap INT, s_pri INT
@@ -50,7 +51,7 @@ BEGIN
     FETCH v_server_cursor INTO v_server_rec;
     
     IF FOUND THEN
-        v_current_s_name := v_server_rec.s_name;
+        v_current_s_pri := v_server_rec.s_pri;
         v_current_s_cap := v_server_rec.s_cap;
     END IF;
 
@@ -60,7 +61,7 @@ BEGIN
         IF v_current_used >= v_current_s_cap THEN
             FETCH v_server_cursor INTO v_server_rec;
             IF FOUND THEN
-                v_current_s_name := v_server_rec.s_name;
+                v_current_s_pri := v_server_rec.s_pri;
                 v_current_s_cap := v_server_rec.s_cap;
                 v_current_used := 0;
             END IF;
@@ -69,8 +70,7 @@ BEGIN
         v_current_used := v_current_used + 1;
 
         UPDATE "Accounts"
-        SET index_server = v_current_s_name,
-            index_emulators = v_current_used::TEXT
+        SET index_server = v_current_s_pri::TEXT
         WHERE id = v_acc.id;
 
     END LOOP;
@@ -91,12 +91,12 @@ BEGIN
     WITH ranked AS (
         SELECT id, ROW_NUMBER() OVER(ORDER BY created_at ASC, id ASC) as rnk
         FROM "Accounts"
-        WHERE user_id = p_user_id
+        WHERE user_id = p_user_id::TEXT
     )
     UPDATE "Accounts" a
     SET 
         "Is_OK" = CASE WHEN r.rnk <= v_quota THEN true ELSE false END,
-        "Date_OK" = CASE WHEN r.rnk <= v_quota THEN COALESCE("Date_OK", CURRENT_TIMESTAMP::TEXT) ELSE NULL END
+        "Date_OK" = CASE WHEN r.rnk <= v_quota THEN COALESCE("Date_OK", CURRENT_DATE) ELSE NULL END
     FROM ranked r
     WHERE a.id = r.id;
 
@@ -111,7 +111,9 @@ DECLARE
     u_rec RECORD;
 BEGIN
     FOR u_rec IN SELECT DISTINCT user_id FROM "Accounts" LOOP
-        PERFORM auto_approve_user_accounts(u_rec.user_id);
+        IF u_rec.user_id IS NOT NULL AND u_rec.user_id ~ '^[0-9a-fA-F-]{36}$' THEN
+            PERFORM auto_approve_user_accounts(u_rec.user_id::UUID);
+        END IF;
     END LOOP;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -254,7 +256,7 @@ export default function SettingsAdmin() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                     {serversConfig.map((server, index) => {
-                        const inServer = approvedAccounts.filter(a => a.index_server === server.name).length;
+                        const inServer = approvedAccounts.filter(a => a.index_server === String(server.priority)).length;
                         const capacity = parseInt(server.capacity || 0);
                         const pct = capacity > 0 ? Math.round((inServer / capacity) * 100) : 0;
                         const barColor = pct >= 100 ? "var(--red)" : pct >= 80 ? "var(--gold)" : "var(--green)";

@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS public."Accounts" (
   "Is_OK"           BOOLEAN NULL,
   user_id           TEXT NULL,
   "Id_Emulators"    TEXT NULL,
+  index_emulators   TEXT NULL,
   index_server      TEXT NULL,
   "Date_OK"         DATE NULL,
   animal            TEXT NULL,
@@ -118,10 +119,7 @@ CREATE TABLE IF NOT EXISTS public.admin_settings (
 ) TABLESPACE pg_default;
 
 -- القيم الافتراضية للإعدادات (يمكنك تعديلها لاحقاً)
-INSERT INTO public.admin_settings (key, value)
-VALUES
-  ('max_accounts_per_server', '50'),
-  ('server_count', '5')
+  ('servers_config', '[{"name":"Server 1","capacity":60,"priority":1},{"name":"Server 2","capacity":108,"priority":2},{"name":"Server 3","capacity":85,"priority":3}]')
 ON CONFLICT (key) DO NOTHING;
 
 
@@ -152,47 +150,80 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_max_per_server   INT;
-  v_server_count     INT;
-  v_total_slots      INT;
-  v_rec              RECORD;
-  v_slot             INT := 0;
+  v_servers          JSONB;
+  v_server_rec       RECORD;
+  v_acc              RECORD;
+  
+  v_current_s_name   TEXT;
+  v_current_s_cap    INT;
+  v_current_used     INT := 0;
+  
+  v_server_cursor    REFCURSOR;
 BEGIN
-  -- اقرأ الإعدادات
-  SELECT value::INT INTO v_max_per_server
-  FROM public.admin_settings WHERE key = 'max_accounts_per_server';
-  v_max_per_server := COALESCE(v_max_per_server, 50);
+  -- جلب إعدادات السيرفرات من جدول الإعدادات
+  SELECT value::jsonb INTO v_servers FROM public.admin_settings WHERE key = 'servers_config';
+  
+  -- إذا لم يتم ضبط الإعدادات بعد، استخدم إعدادات افتراضية
+  IF v_servers IS NULL OR jsonb_array_length(v_servers) = 0 THEN
+      v_servers := '[{"name": "Server 1", "capacity": 10, "priority": 1}]'::jsonb;
+  END IF;
 
-  SELECT value::INT INTO v_server_count
-  FROM public.admin_settings WHERE key = 'server_count';
-  v_server_count := COALESCE(v_server_count, 5);
-
-  v_total_slots := v_max_per_server * v_server_count;
-
-  -- أصفر index_server لكل الحسابات غير المعتمدة أولاً
-  UPDATE public."Accounts"
-  SET index_server = NULL
+  -- تصفير الفهارس للحسابات غير المعتمدة
+  UPDATE public."Accounts" 
+  SET index_server = NULL, index_emulators = NULL 
   WHERE "Is_OK" = false OR "Is_OK" IS NULL;
 
-  -- وزّع الحسابات المعتمدة على السيرفرات بالترتيب
-  FOR v_rec IN
-    SELECT id
-    FROM public."Accounts"
-    WHERE "Is_OK" = true
-    ORDER BY "Date_OK" ASC, id ASC
+  -- إنشاء قائمة السيرفرات مرتبة حسب الأولوية وتخزينها في متغير مؤقت
+  CREATE TEMP TABLE IF NOT EXISTS tmp_srvs (
+      s_name TEXT, s_cap INT, s_pri INT
+  ) ON COMMIT DROP;
+  
+  TRUNCATE tmp_srvs;
+  
+  INSERT INTO tmp_srvs (s_name, s_cap, s_pri)
+  SELECT 
+      s->>'name', 
+      (s->>'capacity')::INT, 
+      (s->>'priority')::INT
+  FROM jsonb_array_elements(v_servers) AS s
+  ORDER BY (s->>'priority')::INT ASC;
+
+  -- فتح مؤشر لقراءة السيرفرات المتاحة
+  OPEN v_server_cursor FOR SELECT * FROM tmp_srvs ORDER BY s_pri ASC;
+  FETCH v_server_cursor INTO v_server_rec;
+  
+  IF FOUND THEN
+      v_current_s_name := v_server_rec.s_name;
+      v_current_s_cap := v_server_rec.s_cap;
+  END IF;
+
+  -- توزيع الحسابات المعتمدة (الأقدمية للأقدم)
+  FOR v_acc IN 
+      SELECT id FROM public."Accounts" WHERE "Is_OK" = true ORDER BY created_at ASC, id ASC 
   LOOP
-    IF v_slot < v_total_slots THEN
+      -- إذا السيرفر ممتلئ، انتقل للذي يليه
+      IF v_current_used >= v_current_s_cap THEN
+          FETCH v_server_cursor INTO v_server_rec;
+          IF FOUND THEN
+              v_current_s_name := v_server_rec.s_name;
+              v_current_s_cap := v_server_rec.s_cap;
+              v_current_used := 0;
+          END IF;
+      END IF;
+
+      -- زيادة عداد السيرفر
+      v_current_used := v_current_used + 1;
+
+      -- تحديث الحساب بالسيرفر ورقمه الداخلي
       UPDATE public."Accounts"
-      SET index_server = ((v_slot / v_max_per_server) + 1)::TEXT
-      WHERE id = v_rec.id;
-      v_slot := v_slot + 1;
-    ELSE
-      -- تجاوز الطاقة: ألغِ الاعتماد
-      UPDATE public."Accounts"
-      SET "Is_OK" = false, index_server = NULL
-      WHERE id = v_rec.id;
-    END IF;
+      SET index_server = v_current_s_name,
+          index_emulators = v_current_used::TEXT,
+          "Id_Emulators" = v_current_used::TEXT
+      WHERE id = v_acc.id;
+
   END LOOP;
+
+  CLOSE v_server_cursor;
 END;
 $$;
 

@@ -59,9 +59,6 @@ function AccountRow({ acc, fmtDate, t }) {
                         <span style={{ background: "var(--accent-soft)", color: "var(--accent)", fontWeight: 700, fontSize: "0.75rem", padding: "0.2rem 0.5rem", borderRadius: 999, display: "flex", alignItems: "center", gap: 3 }}>
                             <Server size={11} /> {acc.index_server}
                         </span>
-                        <span style={{ background: "var(--gold-soft)", color: "var(--gold)", fontWeight: 700, fontSize: "0.75rem", padding: "0.2rem 0.5rem", borderRadius: 999, display: "flex", alignItems: "center", gap: 3 }}>
-                            <Hash size={11} /> {acc.index_emulators}
-                        </span>
                     </div>
                 ) : (
                     <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>—</span>
@@ -183,15 +180,16 @@ export default function AdminDashboard() {
 
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                         {parsedServersConfig.map((srvInfo) => {
+                            const srvPri = String(srvInfo.priority);
                             const srvName = srvInfo.name;
-                            const count = serverMap[srvName] ? serverMap[srvName].count : 0;
+                            const count = serverMap[srvPri] ? serverMap[srvPri].count : 0;
                             const cap = parseInt(srvInfo.capacity || 8);
                             const pct = Math.round((count / cap) * 100) || 0;
                             const bar = pct >= 90 ? "var(--red)" : pct >= 70 ? "var(--gold)" : "var(--green)";
                             return (
-                                <div key={srvName}>
+                                <div key={srvPri}>
                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
-                                        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>سيرفر {srvName}</span>
+                                        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>{srvName}</span>
                                         <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{count}/{cap} مكان مشغول</span>
                                     </div>
                                     <div style={{ height: 6, background: "var(--bg-hover)", borderRadius: 999 }}>

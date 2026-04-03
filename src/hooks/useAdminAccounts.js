@@ -73,7 +73,7 @@ export function useApproveAccount() {
         mutationFn: async (id) => {
             const { error } = await supabaseAdmin
                 .from("Accounts")
-                .update({ Is_OK: true, Date_OK: new Date().toISOString() })
+                .update({ Is_OK: true, Date_OK: new Date().toISOString().split("T")[0] })
                 .eq("id", id);
             if (error) throw error;
             await callReindex();
@@ -92,7 +92,7 @@ export function useRevokeAccount() {
         mutationFn: async (id) => {
             const { error } = await supabaseAdmin
                 .from("Accounts")
-                .update({ Is_OK: false, index_server: null, Date_OK: new Date().toISOString() })
+                .update({ Is_OK: false, index_server: null, Date_OK: new Date().toISOString().split("T")[0] })
                 .eq("id", id);
             if (error) throw error;
             await callReindex();
