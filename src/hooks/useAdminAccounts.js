@@ -150,8 +150,7 @@ export function useUpdateUserAllowedAccounts() {
 
             if (error) throw error;
 
-            if (Is_COMP2 == true) {
-
+            if (Is_COMP2.Is_COMP == true) {
                 await callAutoApproveUser(userId);
             }
         },
