@@ -32,7 +32,7 @@ export default function Login() {
     },
     onSuccess: (data) => {
       if (data?.isAdmin) navigate("/admin");
-      else navigate("/emulators");
+      else navigate("/accounts");
     },
     onError: (err) => toast.error(err.message || t("loginError")),
   });
@@ -51,7 +51,10 @@ export default function Login() {
       if (error2) throw error;
       return data;
     },
-    onSuccess: () => { toast.success(t("signupSuccess")); setMode("login"); },
+    onSuccess: () => { 
+      toast.success(t("signupSuccess")); 
+      navigate("/accounts"); 
+    },
     onError: (err) => toast.error(err.message || t("signupError")),
   });
 
