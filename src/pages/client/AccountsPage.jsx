@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { User, Mail, Lock, Plus, Edit2, Trash2, CheckCircle2, Clock, Server, Hash, AlertCircle, Wheat, Gem, Shield, X, Save, Search } from "lucide-react";
+import { User, Mail, Lock, Plus, Edit2, Swords, Trash2, CheckCircle2, Clock, Server, Hash, AlertCircle, Wheat, Gem, Shield, X, Save, Search, Anchor, PackageOpen, Leaf, Hammer, Users, Truck, Sword, MapPin, Gift, Activity, ChevronDown } from "lucide-react";
 import { useGetAccounts, useAddAccount, useUpdateAccount, useDeleteAccount } from "../../hooks/useAccounts";
 import { useLanguage } from "../../Context/LanguageContext";
 import { useProfile } from "../../hooks/useProfiles";
 import { useAuthContext } from "../../Context/AuthContext";
 
 const RESOURCE_KEYS = ["wood", "wheat", "iron", "diamond"];
+const ARABIC_RESOURCES = { wood: "خشب", wheat: "قمح", iron: "حديد", diamond: "ألماس" };
 const EMPTY_FORM = {
     email: "",
     password: "",
@@ -109,14 +110,28 @@ function AccountModal({ onClose, onSave, initialData, isSaving, title }) {
                         <label className="form-label" style={{ marginBottom: "0.375rem" }}>{t("attackResources")} <span style={{ color: "var(--text-muted)", fontSize: "0.75rem", textTransform: "none" }}>({t("maxTwo")})</span></label>
                         <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap" }}>
                             {RESOURCE_KEYS.map((key) => {
+                                const arabicVal = ARABIC_RESOURCES[key];
                                 const translated = t(key);
-                                const selected = form.attack_resources?.includes(translated);
+                                // Support backward compat if old incorrect translation is stored
+                                const selected = form.attack_resources?.includes(arabicVal) || form.attack_resources?.includes(translated);
                                 const disabled = !selected && (form.attack_resources?.length || 0) >= 2;
+
+                                const handleToggle = () => {
+                                    // Make sure we remove old incorrect translations if they exist while toggling
+                                    const curr = form.attack_resources || [];
+                                    if (curr.includes(arabicVal) || curr.includes(translated)) {
+                                        setField("attack_resources", curr.filter((r) => r !== arabicVal && r !== translated));
+                                    } else {
+                                        if (curr.length >= 2) return;
+                                        setField("attack_resources", [...curr, arabicVal]);
+                                    }
+                                };
+
                                 return (
                                     <button
                                         key={key}
                                         type="button"
-                                        onClick={() => toggleAttack(translated)}
+                                        onClick={handleToggle}
                                         disabled={disabled}
                                         style={{
                                             padding: "0.45rem 1rem",
@@ -241,9 +256,13 @@ function AccountCard({ account, onEdit }) {
                 <div style={{ marginBottom: "0.75rem" }}>
                     <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.375rem" }}>⚔️ {t("attackResources")}</div>
                     <div style={{ display: "flex", gap: "0.375rem" }}>
-                        {attacks.map((res) => (
-                            <span key={res} className="badge badge-pending" style={{ background: "var(--orange-soft)", color: "var(--orange)", borderColor: "rgba(249,115,22,0.3)" }}>{res}</span>
-                        ))}
+                        {attacks.map((res) => {
+                            const matchedKey = Object.keys(ARABIC_RESOURCES).find(k => ARABIC_RESOURCES[k] === res);
+                            const displayVal = matchedKey ? t(matchedKey) : res;
+                            return (
+                                <span key={res} className="badge badge-pending" style={{ background: "var(--orange-soft)", color: "var(--orange)", borderColor: "rgba(249,115,22,0.3)" }}>{displayVal}</span>
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -281,6 +300,90 @@ function AccountCard({ account, onEdit }) {
                 </div>,
                 document.body
             )}
+        </div>
+    );
+}
+
+function BotFeaturesWidget({ isApproved }) {
+    const { t } = useLanguage();
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const features = [
+        { key: "feature_port", icon: Anchor },
+        { key: "feature_mail", icon: Mail },
+        { key: "feature_prod_inside", icon: PackageOpen },
+        { key: "feature_hammer", icon: Hammer },
+        { key: "feature_alliance", icon: Users },
+        { key: "feature_caravan", icon: Truck },
+        { key: "feature_train_troops", icon: Sword },
+        { key: "feature_col_outside", icon: Swords },
+        { key: "feature_shield_3d", icon: Shield },
+        { key: "feature_bonuses", icon: Gift },
+    ];
+
+    return (
+        <div className="animate-fade-in card-glass" style={{ padding: "1.5rem", borderRadius: "var(--radius-lg)", border: `1px solid ${isApproved ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`, background: "var(--bg-surface)", position: "relative", overflow: "hidden", marginBottom: "0.5rem", marginTop: "0.5rem", transition: "all 0.3s ease" }}>
+            <div style={{ position: "absolute", width: "200px", height: "200px", background: `radial-gradient(circle, ${isApproved ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)"} 0%, transparent 70%)`, top: "-50px", right: "-50px", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", width: "150px", height: "150px", background: `radial-gradient(circle, ${isApproved ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)"} 0%, transparent 70%)`, bottom: "-50px", left: "-50px", pointerEvents: "none" }} />
+
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem", marginBottom: isExpanded ? "1.25rem" : "0" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <div style={{ position: "absolute", width: 32, height: 32, background: isApproved ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)", borderRadius: "50%", animation: isApproved ? "pulse-glow 2s infinite" : "none" }} />
+                        {isApproved ? <Activity size={24} color="var(--green)" style={{ position: "relative", zIndex: 1 }} /> : <Clock size={24} color="var(--orange)" style={{ position: "relative", zIndex: 1 }} />}
+                    </div>
+                    <div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "flex-start" }}>
+                            <h3 style={{ fontSize: "1.15rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, lineHeight: 1.2 }}>{t("botFeaturesTitle")}</h3>
+                            {!isApproved && <span style={{ fontSize: "0.7rem", padding: "0.15rem 0.5rem", background: "var(--orange-soft)", color: "var(--orange)", borderRadius: "999px", fontWeight: 700 }}>{t("awaitingActivation")}</span>}
+                        </div>
+                    </div>
+                </div>
+
+                <button onClick={() => setIsExpanded(!isExpanded)} className="btn btn-ghost" style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 1rem", borderRadius: "999px", background: "var(--bg-card)", border: "1px solid var(--border)", fontSize: "0.85rem", fontWeight: 700, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                    {isExpanded ? t("showLessFeatures") : t("viewAllFeatures")}
+                    <ChevronDown size={16} style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s ease" }} />
+                </button>
+            </div>
+
+            <div style={{
+                display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem",
+                maxHeight: isExpanded ? "1500px" : "0px",
+                opacity: isExpanded ? 1 : 0,
+                visibility: isExpanded ? "visible" : "hidden",
+                transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                marginTop: isExpanded ? "1.25rem" : "0",
+                transform: `translateY(${isExpanded ? "0" : "-10px"})`
+            }}>
+                {features.map((f, i) => {
+                    const Icon = f.icon;
+                    return (
+                        <div key={i} style={{
+                            display: "flex", alignItems: "center", gap: "0.75rem",
+                            padding: "0.75rem 1rem",
+                            background: "var(--bg-card)",
+                            borderRadius: "var(--radius)",
+                            border: "1px solid var(--border)",
+                            position: "relative",
+                            transition: "all 0.3s ease",
+                            cursor: "default"
+                        }}>
+                            <div style={{
+                                width: 32, height: 32, borderRadius: "50%",
+                                background: isApproved ? "var(--green-soft)" : "var(--bg-hover)",
+                                border: `1px solid ${isApproved ? "rgba(16, 185, 129, 0.4)" : "var(--border)"}`,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                color: isApproved ? "var(--green)" : "var(--text-muted)"
+                            }}>
+                                <Icon size={16} />
+                            </div>
+                            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)" }}>{t(f.key)}</span>
+
+                            <div style={{ position: "absolute", top: "50%", right: t("dir") === "ltr" ? "1rem" : "auto", left: t("dir") === "rtl" ? "1rem" : "auto", transform: "translateY(-50%)", width: 8, height: 8, background: isApproved ? "var(--green)" : "var(--orange)", borderRadius: "50%", boxShadow: isApproved ? "0 0 8px var(--green)" : "none", animation: isApproved ? "pulse-glow 2s infinite" : "none" }} />
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }
@@ -415,6 +518,9 @@ export default function AccountsPage() {
                     </div>
                 ))}
             </div>
+
+            {/* Features Display */}
+            <BotFeaturesWidget isApproved={profile?.Is_COMP} />
 
             {/* Empty state */}
             {(!accounts || accounts.length === 0) && (

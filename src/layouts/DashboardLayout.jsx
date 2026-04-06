@@ -1,30 +1,13 @@
-import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
-import { useLanguage } from "../Context/LanguageContext";
 
 export default function DashboardLayout() {
-  const { t } = useLanguage();
-  const isMobile = () => window.innerWidth <= 900;
-  const [sidebarOpen, setSidebarOpen] = useState(!isMobile());
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth <= 900) setSidebarOpen(false);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-base)" }}>
-      <Header onMenuClick={() => setSidebarOpen((p) => !p)} isAdmin={false} />
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Header isAdmin={false} />
       <main
         className="main-content"
         style={{
-          [t("dir") === "ltr" ? "marginLeft" : "marginRight"]: sidebarOpen ? 240 : 0,
           transition: "all 0.3s ease",
           minHeight: "100vh",
           padding: "calc(60px + 1.5rem) 1.5rem 2rem",

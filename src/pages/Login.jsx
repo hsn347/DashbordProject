@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuthContext } from "../Context/AuthContext";
 import { ADMIN_EMAIL } from "../Context/AuthContext";
-import { Eye, EyeOff, LogIn, Shield, Sword } from "lucide-react";
+import { Eye, EyeOff, LogIn, Shield, Sword, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "../Context/LanguageContext";
 
@@ -13,7 +13,7 @@ const ADMIN_PASSWORD = "zxcvbnmwwee5#";
 export default function Login() {
   const navigate = useNavigate();
   const { loginAsAdmin } = useAuthContext();
-  const { t, dir } = useLanguage();
+  const { t, dir, lang, setLang } = useLanguage();
   const [mode, setMode] = useState("login");
   const [showPass, setShowPass] = useState(false);
   const [form, setForm] = useState({ email: "", password: "", name: "" });
@@ -73,6 +73,23 @@ export default function Login() {
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: "1.5rem", position: "relative", overflow: "hidden",
     }}>
+      {/* Language Switcher */}
+      <div style={{ position: "absolute", top: "1.5rem", ...(dir === "rtl" ? { left: "1.5rem" } : { right: "1.5rem" }), zIndex: 10 }}>
+        <button 
+          onClick={() => {
+            const nextLang = lang === "ar" ? "en" : lang === "en" ? "tr" : "ar";
+            setLang(nextLang);
+          }}
+          className="btn btn-ghost" 
+          style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "var(--bg-card)", border: "1px solid var(--border)", padding: "0.5rem 0.75rem", borderRadius: "999px", cursor: "pointer" }}
+        >
+          <Globe size={16} color="var(--accent)" />
+          <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>
+            {lang === "ar" ? "العربية" : lang === "en" ? "English" : "Türkçe"}
+          </span>
+        </button>
+      </div>
+
       {/* Background orbs */}
       <div style={{ position: "absolute", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(108,99,255,0.18) 0%, transparent 70%)", top: "-100px", left: "-100px", pointerEvents: "none" }} />
       <div style={{ position: "absolute", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,158,11,0.15) 0%, transparent 70%)", bottom: "-80px", right: "-80px", pointerEvents: "none" }} />

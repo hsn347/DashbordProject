@@ -107,9 +107,11 @@ export default function Header({ onMenuClick, isAdmin }) {
         }}>
             {/* Left: menu + title */}
             <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
-                <button onClick={onMenuClick} className="btn btn-ghost" style={{ padding: "0.4rem" }}>
-                    <Menu size={20} />
-                </button>
+                {isAdmin && (
+                    <button onClick={onMenuClick} className="btn btn-ghost" style={{ padding: "0.4rem" }}>
+                        <Menu size={20} />
+                    </button>
+                )}
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     {isAdmin && <ShieldCheck size={16} color="var(--gold)" />}
                     <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--text-primary)" }}>

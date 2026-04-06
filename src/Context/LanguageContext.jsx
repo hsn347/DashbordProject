@@ -10,7 +10,14 @@ const LOCALE_MAP = { ar: "ar-SA", en: "en-US", tr: "tr-TR" };
 export function LanguageProvider({ children }) {
     const [lang, setLang] = useState(() => {
         const stored = localStorage.getItem("lang");
-        return SUPPORTED.includes(stored) ? stored : "ar";
+        if (SUPPORTED.includes(stored)) return stored;
+        
+        // Auto-detect system language
+        if (typeof window !== "undefined" && window.navigator && window.navigator.language) {
+             const sysLang = window.navigator.language.split("-")[0];
+             if (SUPPORTED.includes(sysLang)) return sysLang;
+        }
+        return "ar";
     });
 
     useEffect(() => {
