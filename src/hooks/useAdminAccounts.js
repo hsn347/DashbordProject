@@ -211,12 +211,12 @@ export function useForceGlobalApply() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async () => {
-            const { error } = await supabaseAdmin.rpc("auto_approve_all_users");
+            const { error } = await supabaseAdmin.rpc("reindex_accounts_v2");
             if (error) throw error;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-accounts"] });
-            toast.success("تم إعادة هيكلة السيرفرات لكل المستخدمين بنجاح.");
+            toast.success("تم إعادة ترتيب الحسابات المقبولة في السيرفرات بنجاح.");
         },
         onError: (err) => toast.error("فشل في تطبيق الهيكلة الجديدة"),
     });
