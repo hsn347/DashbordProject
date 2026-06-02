@@ -203,6 +203,14 @@ const translations = {
         awaitingActivation: "قيد الانتظار للتفعيل...",
         viewAllFeatures: "عرض جميع المهام",
         showLessFeatures: "إخفاء",
+        botRunning: "البوت يعمل",
+        botStopped: "البوت متوقف",
+        activeAccounts: "حسابات نشطة",
+        welcomeBack: "مرحباً بعودتك",
+        accountStrength: "قوة الإعداد",
+        configuredFeatures: "ميزات مفعلة",
+        addFirstAccountDesc: "أضف أول حساب لتبدأ رحلتك مع البوت",
+        noResultsFor: "لا توجد نتائج لـ",
 
         // ── Months ──
         months: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
@@ -418,6 +426,14 @@ const translations = {
         awaitingActivation: "Awaiting Activation...",
         viewAllFeatures: "View All Features",
         showLessFeatures: "Show Less",
+        botRunning: "Bot Running",
+        botStopped: "Bot Stopped",
+        activeAccounts: "Active Accounts",
+        welcomeBack: "Welcome Back",
+        accountStrength: "Config Strength",
+        configuredFeatures: "Features Enabled",
+        addFirstAccountDesc: "Add your first account to start your bot journey",
+        noResultsFor: "No results for",
 
         // ── Months ──
         months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
@@ -633,6 +649,14 @@ const translations = {
         awaitingActivation: "Aktivasyon Bekleniyor...",
         viewAllFeatures: "Tüm Görevleri Gör",
         showLessFeatures: "Daha Az Göster",
+        botRunning: "Bot Çalışıyor",
+        botStopped: "Bot Durdu",
+        activeAccounts: "Aktif Hesaplar",
+        welcomeBack: "Tekrar Hoş Geldiniz",
+        accountStrength: "Yapılandırma Gücü",
+        configuredFeatures: "Etkin Özellikler",
+        addFirstAccountDesc: "Bot yolculuğunuza başlamak için ilk hesabınızı ekleyin",
+        noResultsFor: "Sonuç bulunamadı",
 
         // ── Months ──
         months: ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"],

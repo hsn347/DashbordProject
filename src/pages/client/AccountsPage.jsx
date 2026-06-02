@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { User, Mail, Lock, Plus, Edit2, Swords, Trash2, CheckCircle2, Clock, Server, Hash, AlertCircle, Wheat, Gem, Shield, X, Save, Search, Anchor, PackageOpen, Leaf, Hammer, Users, Truck, Sword, MapPin, Gift, Activity, ChevronDown } from "lucide-react";
+import { User, Mail, Lock, Plus, Edit2, Swords, Trash2, CheckCircle2, Clock, Server, Hash, AlertCircle, Wheat, Gem, Shield, X, Save, Search, Anchor, PackageOpen, Leaf, Hammer, Users, Truck, Sword, MapPin, Gift, Activity, ChevronDown, Zap } from "lucide-react";
 import { useGetAccounts, useAddAccount, useUpdateAccount, useDeleteAccount } from "../../hooks/useAccounts";
 import { useLanguage } from "../../Context/LanguageContext";
 import { useProfile } from "../../hooks/useProfiles";
@@ -188,10 +188,14 @@ function AccountCard({ account, onEdit }) {
     const resources = account.Collect_resources;
     const attacks = account["Attack resources"];
     const isApproved = account.Is_OK;
+    const isActive = account.Is_Active;
 
     return (
-        <div className="card" style={{ padding: "1.25rem", borderColor: isApproved ? "rgba(16,185,129,0.3)" : "var(--border)", position: "relative" }}>
-            {isApproved && (
+        <div className={`card${isActive ? ' card--bot-active' : ''}`} style={{ padding: "1.25rem", borderColor: isActive ? "rgba(16,185,129,0.4)" : isApproved ? "rgba(16,185,129,0.3)" : "var(--border)", position: "relative", overflow: "hidden" }}>
+            {isActive && (
+                <div className="card-active-glow" />
+            )}
+            {isApproved && !isActive && (
                 <div style={{ position: "absolute", inset: 0, borderRadius: "var(--radius)", boxShadow: "0 0 20px rgba(16,185,129,0.1)", pointerEvents: "none" }} />
             )}
 
@@ -224,12 +228,16 @@ function AccountCard({ account, onEdit }) {
                 </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", marginBottom: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
                 {isApproved ? (
                     <span className="badge badge-approved"><CheckCircle2 size={10} /> {t("approved")}</span>
                 ) : (
                     <span className="badge badge-pending"><Clock size={10} /> {t("pending")}</span>
                 )}
+                <span className={`bot-active-badge ${isActive ? 'bot-active-badge--running' : 'bot-active-badge--stopped'}`}>
+                    <span className={`bot-active-dot ${isActive ? 'bot-active-dot--running' : 'bot-active-dot--stopped'}`} />
+                    {isActive ? t("botRunning") : t("botStopped")}
+                </span>
             </div>
             {resources && (
                 <div style={{ marginBottom: "0.75rem" }}>
@@ -424,6 +432,7 @@ export default function AccountsPage() {
 
     const approved = accounts?.filter((a) => a.Is_OK) || [];
     const pending = accounts?.filter((a) => !a.Is_OK) || [];
+    const activeAccounts = accounts?.filter((a) => a.Is_Active) || [];
 
     const handleAdd = (formData) => {
         addAccount.mutate(formData, { onSuccess: () => setShowAdd(false) });
@@ -508,6 +517,7 @@ export default function AccountsPage() {
                     { labelKey: "accountsCount", value: accounts?.length || 0, color: "var(--accent)", icon: User },
                     { labelKey: "approved", value: approved.length, color: "var(--green)", icon: CheckCircle2 },
                     { labelKey: "pending", value: pending.length, color: "var(--gold)", icon: Clock },
+                    { labelKey: "activeAccounts", value: activeAccounts.length, color: "#10b981", icon: Zap },
                 ].map(({ labelKey, value, color, icon: Icon }) => (
                     <div key={labelKey} className="stat-card">
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
