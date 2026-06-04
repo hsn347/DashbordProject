@@ -183,6 +183,7 @@ function AccountModal({ onClose, onSave, initialData, isSaving, title }) {
 function AccountCard({ account, onEdit }) {
     const { t, fmtDate } = useLanguage();
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const deleteAccount = useDeleteAccount();
 
     const resources = account.Collect_resources;
@@ -190,104 +191,165 @@ function AccountCard({ account, onEdit }) {
     const isApproved = account.Is_OK;
     const isActive = account.Is_Active;
 
+    const formatNum = (val) => {
+        if (val === undefined || val === null) return "0";
+        return val.toString();
+    };
+
     return (
-        <div className={`card${isActive ? ' card--bot-active' : ''}`} style={{ padding: "1.25rem", borderColor: isActive ? "rgba(16,185,129,0.4)" : isApproved ? "rgba(16,185,129,0.3)" : "var(--border)", position: "relative", overflow: "hidden" }}>
-            {isActive && (
-                <div className="card-active-glow" />
-            )}
-            {isApproved && !isActive && (
-                <div style={{ position: "absolute", inset: 0, borderRadius: "var(--radius)", boxShadow: "0 0 20px rgba(16,185,129,0.1)", pointerEvents: "none" }} />
-            )}
+        <div className={`card card-glass card-stagger${isActive ? ' card--bot-active' : ''}`} style={{ padding: "0", borderColor: isActive ? "rgba(16,185,129,0.5)" : isApproved ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.05)", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)" }}>
+            {isActive && <div className="card-active-glow" />}
+            {isApproved && !isActive && <div style={{ position: "absolute", inset: 0, borderRadius: "var(--radius)", boxShadow: "inset 0 0 30px rgba(16,185,129,0.05)", pointerEvents: "none" }} />}
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: isApproved ? "var(--green-soft)" : "var(--accent-soft)", border: `2px solid ${isApproved ? "var(--green)" : "var(--border)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <User size={22} color={isApproved ? "var(--green)" : "var(--accent)"} />
-                    </div>
-                    <div>
-                        <div style={{ fontWeight: 600, fontSize: "0.95rem", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={account.Email}>
-                            {account.Email}
-                        </div>
-                        <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                            {fmtDate(account.created_at)}
-                        </div>
-                        {account.Date_OK && (
-                            <div style={{ fontSize: "0.7rem", fontWeight: 600, color: isApproved ? "var(--green)" : "var(--gold)", marginTop: "0.1rem" }}>
-                                {isApproved ? "✓ " + t("approvedOn") : "✗ " + t("rejectedOn")} {fmtDate(account.Date_OK)}
+            {/* Always Visible Section */}
+            <div onClick={() => setIsExpanded(!isExpanded)} style={{ padding: "1.25rem", cursor: "pointer", position: "relative", zIndex: 1, background: isActive ? "linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(15,23,42,0.8) 100%)" : "linear-gradient(135deg, rgba(30,41,59,0.4) 0%, rgba(15,23,42,0.9) 100%)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.875rem", flex: 1 }}>
+                        <div style={{ overflow: "hidden", flex: 1 }}>
+                            <div style={{ fontWeight: 800, fontSize: "1.05rem", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", background: "linear-gradient(to right, #ffffff, #94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "0.02em" }} title={account.Email}>
+                                {account.Email}
                             </div>
-                        )}
+                            <div style={{ display: "flex", gap: "0.4rem", alignItems: "center", marginTop: "0.4rem", flexWrap: "wrap" }}>
+                                {isApproved ? (
+                                    <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "rgba(16,185,129,0.15)", color: "#34d399", padding: "2px 8px", borderRadius: "6px", border: "1px solid rgba(16,185,129,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("approved")}</span>
+                                ) : (
+                                    <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "rgba(245,158,11,0.15)", color: "#fbbf24", padding: "2px 8px", borderRadius: "6px", border: "1px solid rgba(245,158,11,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("pending")}</span>
+                                )}
+                                <span style={{ fontSize: "0.65rem", fontWeight: 800, background: isActive ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.1)", color: isActive ? "#34d399" : "#f87171", padding: "2px 8px", borderRadius: "6px", display: "flex", alignItems: "center", gap: "6px", border: `1px solid ${isActive ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.2)"}`, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: isActive ? "#34d399" : "#f87171", boxShadow: isActive ? "0 0 6px #34d399" : "none", animation: isActive ? "pulse-glow 2s infinite" : "none" }} />
+                                    {isActive ? t("botRunning") : t("botStopped")}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ padding: "6px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", transition: "all 0.3s ease", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
+                        <ChevronDown size={18} style={{ color: "var(--text-primary)" }} />
                     </div>
                 </div>
-                <div style={{ display: "flex", gap: "0.375rem" }}>
-                    <button className="btn btn-ghost" style={{ padding: "0.3rem", color: "var(--accent)" }} onClick={() => onEdit(account)}>
-                        <Edit2 size={15} />
-                    </button>
-                    <button className="btn btn-ghost" style={{ padding: "0.3rem", color: "var(--red)" }} onClick={() => setConfirmDelete(true)}>
-                        <Trash2 size={15} />
-                    </button>
+
+                {/* Premium Resources Bar */}
+                <div style={{
+                    background: "linear-gradient(90deg, rgba(15,23,42,0.9) 0%, rgba(30,41,59,0.8) 50%, rgba(15,23,42,0.9) 100%)",
+                    borderRadius: "10px",
+                    padding: "0.75rem 0.85rem",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    boxShadow: "inset 0 2px 8px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2)",
+                    gap: "0.75rem",
+                    position: "relative",
+                    overflow: "hidden"
+                }}>
+                    <div style={{ position: "absolute", inset: 0, background: "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDIiLz4KPC9zdmc+')", opacity: 0.5, pointerEvents: "none" }} />
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative", zIndex: 1 }} title="Grain">
+                        <img src="/icons/grain.png" alt="Grain" style={{ width: "32px", height: "32px", objectFit: "contain", filter: "drop-shadow(0px 3px 4px rgba(0,0,0,0.6))" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23eab308'%3E%3Cpath d='M12 2C12 2 8 6 8 12C8 18 12 22 12 22C12 22 16 18 16 12C16 6 12 2 12 2Z'/%3E%3C/svg%3E" }} />
+                        <span style={{ color: "#f8fafc", fontSize: "0.9rem", fontWeight: 800, textShadow: "0px 2px 4px rgba(0,0,0,0.9)", fontFamily: "monospace" }}>{formatNum(account.grain_res)}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative", zIndex: 1 }} title="Lumber">
+                        <img src="/icons/lumber.png" alt="Lumber" style={{ width: "32px", height: "32px", objectFit: "contain", filter: "drop-shadow(0px 3px 4px rgba(0,0,0,0.6))" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23b45309'%3E%3Crect x='4' y='8' width='16' height='8' rx='2'/%3E%3C/svg%3E" }} />
+                        <span style={{ color: "#f8fafc", fontSize: "0.9rem", fontWeight: 800, textShadow: "0px 2px 4px rgba(0,0,0,0.9)", fontFamily: "monospace" }}>{formatNum(account.lumber_res)}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative", zIndex: 1 }} title="Iron">
+                        <img src="/icons/iron.png" alt="Iron" style={{ width: "32px", height: "32px", objectFit: "contain", filter: "drop-shadow(0px 3px 4px rgba(0,0,0,0.6))" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 4L19 9L17 18L7 20L3 13L8 6L12 4Z'/%3E%3C/svg%3E" }} />
+                        <span style={{ color: "#f8fafc", fontSize: "0.9rem", fontWeight: 800, textShadow: "0px 2px 4px rgba(0,0,0,0.9)", fontFamily: "monospace" }}>{formatNum(account.iron_res)}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative", zIndex: 1 }} title="Quartz">
+                        <img src="/icons/quartz.png" alt="Quartz" style={{ width: "32px", height: "32px", objectFit: "contain", filter: "drop-shadow(0px 3px 4px rgba(0,0,0,0.6))" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2338bdf8'%3E%3Cpath d='M12 2L20 8L12 22L4 8L12 2Z'/%3E%3C/svg%3E" }} />
+                        <span style={{ color: "#f8fafc", fontSize: "0.9rem", fontWeight: 800, textShadow: "0px 2px 4px rgba(0,0,0,0.9)", fontFamily: "monospace" }}>{formatNum(account.quartz_res)}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative", zIndex: 1 }} title="Gold">
+                        <img src="/icons/gold.png" alt="Gold" style={{ width: "32px", height: "32px", objectFit: "contain", filter: "drop-shadow(0px 3px 4px rgba(0,0,0,0.6))" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23facc15'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3C/svg%3E" }} />
+                        <span style={{ color: "#f8fafc", fontSize: "0.9rem", fontWeight: 800, textShadow: "0px 2px 4px rgba(0,0,0,0.9)", fontFamily: "monospace" }}>{formatNum(account.gold_res)}</span>
+                    </div>
                 </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-                {isApproved ? (
-                    <span className="badge badge-approved"><CheckCircle2 size={10} /> {t("approved")}</span>
-                ) : (
-                    <span className="badge badge-pending"><Clock size={10} /> {t("pending")}</span>
-                )}
-                <span className={`bot-active-badge ${isActive ? 'bot-active-badge--running' : 'bot-active-badge--stopped'}`}>
-                    <span className={`bot-active-dot ${isActive ? 'bot-active-dot--running' : 'bot-active-dot--stopped'}`} />
-                    {isActive ? t("botRunning") : t("botStopped")}
-                </span>
-            </div>
-            {resources && (
-                <div style={{ marginBottom: "0.75rem" }}>
-                    <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.375rem" }}>{t("collectResources")}</div>
-                    <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
-                        {RESOURCE_KEYS.map((key, i) => (
-                            <span key={key} style={{
-                                padding: "0.2rem 0.55rem",
-                                borderRadius: "999px",
-                                fontSize: "0.72rem",
-                                fontWeight: 600,
-                                background: resources[i] ? "var(--green-soft)" : "var(--bg-hover)",
-                                color: resources[i] ? "var(--green)" : "var(--text-muted)",
-                                border: `1px solid ${resources[i] ? "rgba(16,185,129,0.3)" : "var(--border)"}`,
-                            }}>
-                                {resources[i] ? "✓" : "✗"} {t(key)}
-                            </span>
-                        ))}
+            {/* Expanded Section Details */}
+            <div style={{
+                maxHeight: isExpanded ? "1000px" : "0px",
+                opacity: isExpanded ? 1 : 0,
+                overflow: "hidden",
+                transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                background: "rgba(15,23,42,0.6)",
+                backdropFilter: "blur(10px)"
+            }}>
+                <div style={{ padding: "1.25rem", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.25rem" }}>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                            <span style={{ color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>{t("created")}</span>: <span style={{ color: "var(--text-primary)" }}>{fmtDate(account.created_at)}</span>
+                            {account.Date_OK && <><br /><span style={{ color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>{isApproved ? "✓ " + t("approvedOn") : "✗ " + t("rejectedOn")}</span> <span style={{ color: "var(--text-primary)" }}>{fmtDate(account.Date_OK)}</span></>}
+                        </div>
+                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                            <button className="btn btn-ghost" style={{ padding: "0.4rem 0.75rem", color: "var(--accent)", border: "1px solid rgba(108,99,255,0.3)", background: "rgba(108,99,255,0.1)", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "6px", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }} onClick={(e) => { e.stopPropagation(); onEdit(account); }}>
+                                <Edit2 size={14} /> {t("edit")}
+                            </button>
+                            <button className="btn btn-ghost" style={{ padding: "0.4rem 0.75rem", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "6px", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }} onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}>
+                                <Trash2 size={14} /> {t("delete")}
+                            </button>
+                        </div>
+                    </div>
+
+                    {resources && (
+                        <div style={{ marginBottom: "1rem", background: "rgba(255,255,255,0.02)", padding: "0.75rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.03)" }}>
+                            <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <PackageOpen size={12} /> {t("collectResources")}
+                            </div>
+                            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                                {RESOURCE_KEYS.map((key, i) => (
+                                    <span key={key} style={{
+                                        padding: "0.25rem 0.65rem",
+                                        borderRadius: "6px",
+                                        fontSize: "0.75rem",
+                                        fontWeight: 700,
+                                        background: resources[i] ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.05)",
+                                        color: resources[i] ? "#34d399" : "var(--text-muted)",
+                                        border: `1px solid ${resources[i] ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.1)"}`,
+                                        boxShadow: resources[i] ? "0 2px 8px rgba(16,185,129,0.1)" : "none"
+                                    }}>
+                                        {resources[i] ? "✓" : "✗"} {t(key)}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {attacks && attacks.length > 0 && (
+                        <div style={{ marginBottom: "1rem", background: "rgba(255,255,255,0.02)", padding: "0.75rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.03)" }}>
+                            <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <Swords size={12} /> {t("attackResources")}
+                            </div>
+                            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                                {attacks.map((res) => {
+                                    const matchedKey = Object.keys(ARABIC_RESOURCES).find(k => ARABIC_RESOURCES[k] === res);
+                                    const displayVal = matchedKey ? t(matchedKey) : res;
+                                    return (
+                                        <span key={res} style={{ padding: "0.25rem 0.65rem", borderRadius: "6px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(245,158,11,0.15)", color: "#fbbf24", border: "1px solid rgba(245,158,11,0.3)", boxShadow: "0 2px 8px rgba(245,158,11,0.1)" }}>{displayVal}</span>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {account.animal && (
+                        <div style={{ marginBottom: "1rem", background: "rgba(255,255,255,0.02)", padding: "0.75rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.03)" }}>
+                            <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <Anchor size={12} /> {t("animal")}
+                            </div>
+                            <div style={{ display: "flex", gap: "0.4rem" }}>
+                                <span style={{ padding: "0.25rem 0.65rem", borderRadius: "6px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(168,85,247,0.15)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.3)", boxShadow: "0 2px 8px rgba(168,85,247,0.1)" }}>{t(account.animal)}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
+                        {account.Protection && <span style={{ padding: "0.3rem 0.75rem", borderRadius: "8px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(16,185,129,0.1)", color: "#34d399", border: "1px solid rgba(16,185,129,0.2)" }}>🛡️ {t("protection")}</span>}
+                        {account.Troops && <span style={{ padding: "0.3rem 0.75rem", borderRadius: "8px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(16,185,129,0.1)", color: "#34d399", border: "1px solid rgba(16,185,129,0.2)" }}>⚔️ {t("troops")}</span>}
+                        {account.Not_store && <span style={{ padding: "0.3rem 0.75rem", borderRadius: "8px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }}>🚫 {t("dontBuy")}</span>}
                     </div>
                 </div>
-            )}
-
-            {attacks && attacks.length > 0 && (
-                <div style={{ marginBottom: "0.75rem" }}>
-                    <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.375rem" }}>⚔️ {t("attackResources")}</div>
-                    <div style={{ display: "flex", gap: "0.375rem" }}>
-                        {attacks.map((res) => {
-                            const matchedKey = Object.keys(ARABIC_RESOURCES).find(k => ARABIC_RESOURCES[k] === res);
-                            const displayVal = matchedKey ? t(matchedKey) : res;
-                            return (
-                                <span key={res} className="badge badge-pending" style={{ background: "var(--orange-soft)", color: "var(--orange)", borderColor: "rgba(249,115,22,0.3)" }}>{displayVal}</span>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
-            {account.animal && (
-                <div style={{ marginBottom: "0.75rem" }}>
-                    <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.375rem" }}>🐾 {t("animal")}</div>
-                    <div style={{ display: "flex", gap: "0.375rem" }}>
-                        <span className="badge badge-approved" style={{ background: "var(--purple-soft)", color: "var(--purple)", borderColor: "rgba(168,85,247,0.3)" }}>{t(account.animal)}</span>
-                    </div>
-                </div>
-            )}
-
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                {account.Protection && <span className="badge badge-approved">🛡️ {t("protection")}</span>}
-                {account.Troops && <span className="badge badge-approved">⚔️ {t("troops")}</span>}
-                {account.Not_store && <span className="badge badge-rejected">🚫 {t("dontBuy")}</span>}
             </div>
 
             {confirmDelete && createPortal(

@@ -563,7 +563,7 @@
 
   /* Breathing ambient glow on the card itself */
   .card.card--bot-active {
-    animation: card-breathe 3s ease-in-out infinite;
+    animation: card-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards, card-breathe 3s ease-in-out infinite 0.5s;
     border-color: rgba(16, 185, 129, 0.45) !important;
   }
 
