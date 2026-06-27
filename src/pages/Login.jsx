@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuthContext } from "../Context/AuthContext";
-import { useDomain } from "../Context/DomainContext";
+import { useDomain, detectDomain } from "../Context/DomainContext";
 import { Eye, EyeOff, LogIn, Shield, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "../Context/LanguageContext";
@@ -43,7 +43,7 @@ export default function Login() {
         options: { data: { display_name: name } },
       });
       if (error) throw error;
-      const currentDomain = window.location.hostname;
+      const currentDomain = detectDomain();
       const { data: d, error: error2 } = await supabase.from("profiles").update({
         username: email,
         full_name: name,
