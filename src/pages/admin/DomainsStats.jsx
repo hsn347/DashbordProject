@@ -284,11 +284,6 @@ export default function DomainsStats() {
                     ))}
                 </div>
             )}
-
-            {/* Note */}
-            <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "1rem 1.25rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                <strong style={{ color: "var(--text-secondary)" }}>ملاحظة:</strong> هذه الإحصاءات تعتمد على عمود <code style={{ background: "var(--bg-hover)", padding: "0.1rem 0.3rem", borderRadius: "4px" }}>domain</code> في جداول Accounts وprofiles. إذا كان العمود فارغاً، سيتم اعتبار السجل تابعاً لـ ibraabot.online.
-            </div>
         </div>
     );
 }
