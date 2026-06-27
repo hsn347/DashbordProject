@@ -8,6 +8,7 @@ import {
 import { useGetAllAccounts } from "../../hooks/useAdminAccounts";
 import { useGetSettings } from "../../hooks/useSettings";
 import { useLanguage } from "../../Context/LanguageContext";
+import { useDomain } from "../../Context/DomainContext";
 
 function StatCard({ label, value, sub, icon: Icon, color, bg, isLoading }) {
     return (
@@ -76,6 +77,7 @@ function AccountRow({ acc, fmtDate, t }) {
 
 export default function AdminDashboard() {
     const { data: accounts, isLoading } = useGetAllAccounts();
+    const { config } = useDomain();
     const { data: settings } = useGetSettings();
     const { t, fmtDate } = useLanguage();
 
@@ -148,8 +150,10 @@ export default function AdminDashboard() {
         { label: t("approvedAccounts") || "حسابات معتمدة", value: approved, sub: `${Math.round(approved / (total || 1) * 100)}% من الإجمالي`, icon: CheckCircle2, color: "var(--green)", bg: "var(--green-soft)" },
         { label: t("waitingAccounts") || "حسابات بالانتظار", value: pending, sub: pending > 0 ? "بانتظار المراجعة" : "لا يوجد انتظار", icon: Clock, color: "var(--gold)", bg: "var(--gold-soft)" },
         { label: t("users"), value: uniqueUsers, sub: `مستخدم نشط`, icon: Users, color: "#a78bfa", bg: "rgba(167,139,250,0.15)" },
-        { label: t("activeServers"), value: usedServers, sub: `${totalServersConfigured} تمت إضافتهم`, icon: Server, color: "var(--orange)", bg: "var(--orange-soft)" },
     ];
+    if (config.key === "ibraabot") {
+        stats.push({ label: t("activeServers"), value: usedServers, sub: `${totalServersConfigured} تمت إضافتهم`, icon: Server, color: "var(--orange)", bg: "var(--orange-soft)" });
+    }
 
     return (
         <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
@@ -167,7 +171,7 @@ export default function AdminDashboard() {
                 {stats.map(s => <StatCard key={s.label} {...s} isLoading={isLoading} />)}
             </div>
 
-            {!isLoading && (
+            {!isLoading && config.key === "ibraabot" && (
                 <div className="card" style={{ padding: "1.25rem 1.5rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
                         <span style={{ fontSize: "0.825rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>

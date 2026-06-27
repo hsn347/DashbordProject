@@ -66,6 +66,20 @@ export function DomainProvider({ children }) {
         root.style.setProperty("--gold-soft", config.goldSoft);
         root.style.setProperty("--glow", `0 0 20px ${config.accentGlow}`);
         root.setAttribute("data-domain", config.key);
+
+        // Update Document Title
+        document.title = config.name;
+
+        // Update Favicon
+        if (config.logo) {
+            let link = document.querySelector("link[rel~='icon']");
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.head.appendChild(link);
+            }
+            link.href = config.logo;
+        }
     }, [config]);
 
     return (
