@@ -202,7 +202,7 @@ function AccountCard({ account, onEdit }) {
             {isApproved && !isActive && <div style={{ position: "absolute", inset: 0, borderRadius: "var(--radius)", boxShadow: "inset 0 0 30px rgba(16,185,129,0.05)", pointerEvents: "none" }} />}
 
             {/* Always Visible Section */}
-            <div onClick={() => setIsExpanded(!isExpanded)} style={{ padding: "1.25rem", cursor: "pointer", position: "relative", zIndex: 1, background: isActive ? "linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(15,23,42,0.8) 100%)" : "linear-gradient(135deg, rgba(30,41,59,0.4) 0%, rgba(15,23,42,0.9) 100%)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <div onClick={() => setIsExpanded(!isExpanded)} style={{ padding: "1.25rem", cursor: "pointer", position: "relative", zIndex: 1, background: isActive ? "linear-gradient(135deg, rgba(16,185,129,0.12) 0%, var(--bg-card) 100%)" : "var(--bg-card)", borderBottom: "1px solid var(--border)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.875rem", flex: 1 }}>
                         <div style={{ overflow: "hidden", flex: 1 }}>
@@ -229,39 +229,39 @@ function AccountCard({ account, onEdit }) {
 
                 {/* Premium Resources Bar */}
                 <div style={{
-                    background: "linear-gradient(90deg, rgba(15,23,42,0.9) 0%, rgba(30,41,59,0.8) 50%, rgba(15,23,42,0.9) 100%)",
+                    background: "var(--bg-surface)",
                     borderRadius: "10px",
                     padding: "0.75rem 0.85rem",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                     flexWrap: "wrap",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    boxShadow: "inset 0 2px 8px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2)",
+                    border: "1px solid var(--border)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                     gap: "0.75rem",
                     position: "relative",
                     overflow: "hidden"
                 }}>
                     <div style={{ position: "absolute", inset: 0, background: "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDIiLz4KPC9zdmc+')", opacity: 0.5, pointerEvents: "none" }} />
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative", zIndex: 1 }} title="Grain">
-                        <img src="/icons/grain.png" alt="Grain" style={{ width: "32px", height: "32px", objectFit: "contain", filter: "drop-shadow(0px 3px 4px rgba(0,0,0,0.6))" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23eab308'%3E%3Cpath d='M12 2C12 2 8 6 8 12C8 18 12 22 12 22C12 22 16 18 16 12C16 6 12 2 12 2Z'/%3E%3C/svg%3E" }} />
-                        <span style={{ color: "#f8fafc", fontSize: "0.9rem", fontWeight: 800, textShadow: "0px 2px 4px rgba(0,0,0,0.9)", fontFamily: "monospace" }}>{formatNum(account.grain_res)}</span>
+                        <img src="/icons/grain.png" alt="Grain" style={{ width: "32px", height: "32px", objectFit: "contain" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23eab308'%3E%3Cpath d='M12 2C12 2 8 6 8 12C8 18 12 22 12 22C12 22 16 18 16 12C16 6 12 2 12 2Z'/%3E%3C/svg%3E" }} />
+                        <span style={{ color: "var(--text-primary)", fontSize: "0.9rem", fontWeight: 800, fontFamily: "monospace" }}>{formatNum(account.grain_res)}</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative", zIndex: 1 }} title="Lumber">
-                        <img src="/icons/lumber.png" alt="Lumber" style={{ width: "32px", height: "32px", objectFit: "contain", filter: "drop-shadow(0px 3px 4px rgba(0,0,0,0.6))" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23b45309'%3E%3Crect x='4' y='8' width='16' height='8' rx='2'/%3E%3C/svg%3E" }} />
-                        <span style={{ color: "#f8fafc", fontSize: "0.9rem", fontWeight: 800, textShadow: "0px 2px 4px rgba(0,0,0,0.9)", fontFamily: "monospace" }}>{formatNum(account.lumber_res)}</span>
+                        <img src="/icons/lumber.png" alt="Lumber" style={{ width: "32px", height: "32px", objectFit: "contain" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23b45309'%3E%3Crect x='4' y='8' width='16' height='8' rx='2'/%3E%3C/svg%3E" }} />
+                        <span style={{ color: "var(--text-primary)", fontSize: "0.9rem", fontWeight: 800, fontFamily: "monospace" }}>{formatNum(account.lumber_res)}</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative", zIndex: 1 }} title="Iron">
-                        <img src="/icons/iron.png" alt="Iron" style={{ width: "32px", height: "32px", objectFit: "contain", filter: "drop-shadow(0px 3px 4px rgba(0,0,0,0.6))" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 4L19 9L17 18L7 20L3 13L8 6L12 4Z'/%3E%3C/svg%3E" }} />
-                        <span style={{ color: "#f8fafc", fontSize: "0.9rem", fontWeight: 800, textShadow: "0px 2px 4px rgba(0,0,0,0.9)", fontFamily: "monospace" }}>{formatNum(account.iron_res)}</span>
+                        <img src="/icons/iron.png" alt="Iron" style={{ width: "32px", height: "32px", objectFit: "contain" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 4L19 9L17 18L7 20L3 13L8 6L12 4Z'/%3E%3C/svg%3E" }} />
+                        <span style={{ color: "var(--text-primary)", fontSize: "0.9rem", fontWeight: 800, fontFamily: "monospace" }}>{formatNum(account.iron_res)}</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative", zIndex: 1 }} title="Quartz">
-                        <img src="/icons/quartz.png" alt="Quartz" style={{ width: "32px", height: "32px", objectFit: "contain", filter: "drop-shadow(0px 3px 4px rgba(0,0,0,0.6))" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2338bdf8'%3E%3Cpath d='M12 2L20 8L12 22L4 8L12 2Z'/%3E%3C/svg%3E" }} />
-                        <span style={{ color: "#f8fafc", fontSize: "0.9rem", fontWeight: 800, textShadow: "0px 2px 4px rgba(0,0,0,0.9)", fontFamily: "monospace" }}>{formatNum(account.quartz_res)}</span>
+                        <img src="/icons/quartz.png" alt="Quartz" style={{ width: "32px", height: "32px", objectFit: "contain" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2338bdf8'%3E%3Cpath d='M12 2L20 8L12 22L4 8L12 2Z'/%3E%3C/svg%3E" }} />
+                        <span style={{ color: "var(--text-primary)", fontSize: "0.9rem", fontWeight: 800, fontFamily: "monospace" }}>{formatNum(account.quartz_res)}</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative", zIndex: 1 }} title="Gold">
-                        <img src="/icons/gold.png" alt="Gold" style={{ width: "32px", height: "32px", objectFit: "contain", filter: "drop-shadow(0px 3px 4px rgba(0,0,0,0.6))" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23facc15'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3C/svg%3E" }} />
-                        <span style={{ color: "#f8fafc", fontSize: "0.9rem", fontWeight: 800, textShadow: "0px 2px 4px rgba(0,0,0,0.9)", fontFamily: "monospace" }}>{formatNum(account.gold_res)}</span>
+                        <img src="/icons/gold.png" alt="Gold" style={{ width: "32px", height: "32px", objectFit: "contain" }} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23facc15'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3C/svg%3E" }} />
+                        <span style={{ color: "var(--text-primary)", fontSize: "0.9rem", fontWeight: 800, fontFamily: "monospace" }}>{formatNum(account.gold_res)}</span>
                     </div>
                 </div>
             </div>
@@ -272,10 +272,10 @@ function AccountCard({ account, onEdit }) {
                 opacity: isExpanded ? 1 : 0,
                 overflow: "hidden",
                 transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
-                background: "rgba(15,23,42,0.6)",
-                backdropFilter: "blur(10px)"
+                background: "var(--bg-surface)",
+                borderTop: "1px solid var(--border)"
             }}>
-                <div style={{ padding: "1.25rem", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ padding: "1.25rem" }}>
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.25rem" }}>
                         <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
@@ -293,7 +293,7 @@ function AccountCard({ account, onEdit }) {
                     </div>
 
                     {resources && (
-                        <div style={{ marginBottom: "1rem", background: "rgba(255,255,255,0.02)", padding: "0.75rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.03)" }}>
+                        <div style={{ marginBottom: "1rem", background: "var(--bg-card)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
                             <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "6px" }}>
                                 <PackageOpen size={12} /> {t("collectResources")}
                             </div>
@@ -317,7 +317,7 @@ function AccountCard({ account, onEdit }) {
                     )}
 
                     {attacks && attacks.length > 0 && (
-                        <div style={{ marginBottom: "1rem", background: "rgba(255,255,255,0.02)", padding: "0.75rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.03)" }}>
+                        <div style={{ marginBottom: "1rem", background: "var(--bg-card)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
                             <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "6px" }}>
                                 <Swords size={12} /> {t("attackResources")}
                             </div>
@@ -334,7 +334,7 @@ function AccountCard({ account, onEdit }) {
                     )}
 
                     {account.animal && (
-                        <div style={{ marginBottom: "1rem", background: "rgba(255,255,255,0.02)", padding: "0.75rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.03)" }}>
+                        <div style={{ marginBottom: "1rem", background: "var(--bg-card)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
                             <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "6px" }}>
                                 <Anchor size={12} /> {t("animal")}
                             </div>

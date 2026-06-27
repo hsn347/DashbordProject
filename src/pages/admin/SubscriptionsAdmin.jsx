@@ -372,7 +372,7 @@ export default function SubscriptionsAdmin() {
     };
 
     const [search, setSearch] = useState("");
-    const [filterApproval, setFilterApproval] = useState("all");
+    const [filterApproval, setFilterApproval] = useState("approved");
     const [filterStatus, setFilterStatus] = useState("all");
     const [userToDelete, setUserToDelete] = useState(null);
     const deleteUser = useDeleteUserAdmin();
@@ -414,7 +414,8 @@ export default function SubscriptionsAdmin() {
     const stats = useMemo(() => {
         const totalAccounts = (accounts || []).length;
         const expiredUsers = usersWithAccounts.filter(u => u.dateExpire && new Date(u.dateExpire) < new Date()).length;
-        return { totalAccounts, expiredUsers };
+        const hasPending = usersWithAccounts.some(u => !u.isApprovedComp || u.accounts.some(a => !a.Is_OK));
+        return { totalAccounts, expiredUsers, hasPending };
     }, [usersWithAccounts, accounts]);
 
     return (
@@ -489,6 +490,7 @@ export default function SubscriptionsAdmin() {
                                 color: filterApproval === key ? "white" : "var(--text-secondary)",
                                 border: `1px solid ${filterApproval === key ? (key === "pending" || key === "expired" ? "var(--red)" : key === "approved" ? "var(--green)" : "var(--accent)") : "var(--border)"}`,
                                 fontSize: "0.8rem",
+                                animation: key === "pending" && stats.hasPending && filterApproval !== "pending" ? "pulse-glow 2s infinite" : "none",
                             }}
                         >
                             {label}

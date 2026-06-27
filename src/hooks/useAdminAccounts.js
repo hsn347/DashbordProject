@@ -49,6 +49,20 @@ export function useGetAllAccounts() {
     });
 }
 
+export function useGetAllAccountsCrossDomain() {
+    return useQuery({
+        queryKey: ["admin-accounts-cross-domain"],
+        queryFn: async () => {
+            const { data: accounts, error: accErr } = await supabaseAdmin
+                .from("Accounts")
+                .select("*")
+                .order("id", { ascending: true });
+            if (accErr) throw accErr;
+            return accounts || [];
+        },
+    });
+}
+
 async function callReindex() {
     try {
         const { error } = await supabaseAdmin.rpc("reindex_accounts_v2");

@@ -278,7 +278,7 @@ export default function DomainsStats() {
 
             {/* Domain Cards */}
             {!isLoading && stats && (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "1.5rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
                     {stats.map(stat => (
                         <DomainCard key={stat.domain} stat={stat} />
                     ))}

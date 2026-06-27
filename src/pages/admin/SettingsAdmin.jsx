@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Save, Settings2, AlertCircle, Info, Server, Copy, Check, RefreshCw, Plus, Minus, Trash2 } from "lucide-react";
 import { useGetSettings, useUpdateSetting } from "../../hooks/useSettings";
-import { useGetAllAccounts, useForceGlobalApply } from "../../hooks/useAdminAccounts";
+import { useGetAllAccountsCrossDomain, useForceGlobalApply } from "../../hooks/useAdminAccounts";
 import { toast } from "sonner";
 import { useLanguage } from "../../Context/LanguageContext";
 
@@ -143,7 +143,7 @@ export default function SettingsAdmin() {
     const { t } = useLanguage();
     const { data: settings, isLoading } = useGetSettings();
     const updateSetting = useUpdateSetting();
-    const { data: accounts } = useGetAllAccounts();
+    const { data: accounts } = useGetAllAccountsCrossDomain();
     const globalSync = useForceGlobalApply();
 
     const [serversConfig, setServersConfig] = useState([]);
