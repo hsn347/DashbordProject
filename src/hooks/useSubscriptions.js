@@ -13,7 +13,10 @@ export function useGetSubscriptions() {
                 .select(`*, Accounts(id, user_id, index_server, Is_OK, Email, domain)`)
                 .order("emulator_id", { ascending: true });
 
-            if (error) throw error;
+            if (error) {
+                console.warn("تجاهل خطأ جدول الاشتراكات (الجدول غير موجود):", error);
+                return [];
+            }
 
             // Filter to current domain only
             const filtered = (data || []).filter(sub =>

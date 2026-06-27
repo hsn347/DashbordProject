@@ -17,7 +17,7 @@ import {
 } from "../../hooks/useAdminAccounts";
 import { useLanguage } from "../../Context/LanguageContext";
 
-function UserExpiryEditor({ userId, currentDateExpire }) {
+function UserExpiryEditor({ userId, currentDateExpire, userName }) {
     const { t } = useLanguage();
     const updateExpiry = useUpdateUserExpiryDate();
     const [isEditing, setIsEditing] = useState(false);
@@ -34,58 +34,169 @@ function UserExpiryEditor({ userId, currentDateExpire }) {
         );
     };
 
-    if (!isEditing) {
-        const isExpired = currentDateExpire && new Date(currentDateExpire) < new Date();
-        return (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: isExpired ? "var(--red-soft)" : "var(--bg-card)", padding: "0.25rem 0.5rem", borderRadius: "var(--radius-sm)", border: `1px solid ${isExpired ? "var(--red)" : "var(--border)"}` }}>
-                <span style={{ fontSize: "0.75rem", color: isExpired ? "var(--red)" : "var(--text-muted)", fontWeight: 600 }}>انتهاء:</span>
-                <span style={{ fontWeight: 800, color: isExpired ? "var(--red)" : "var(--text-primary)", fontSize: "0.85rem" }}>{currentDateExpire ? currentDateExpire.split("T")[0] : "—"}</span>
-                <button
-                    onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-                    className="btn btn-ghost"
-                    style={{ padding: "0.2rem", height: "auto", color: "var(--text-muted)" }}
-                    title={t("edit")}
-                >
-                    <Settings2 size={13} />
-                </button>
+    const handleEditClick = (e) => {
+        e.stopPropagation();
+        if (!currentDateExpire) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            setVal(`${yyyy}-${mm}-${dd}`);
+        } else {
+            setVal(currentDateExpire.split("T")[0]);
+        }
+        setIsEditing(true);
+    };
+
+    const addMonths = (months) => {
+        const currentDate = val ? new Date(val) : new Date();
+        currentDate.setMonth(currentDate.getMonth() + months);
+        const yyyy = currentDate.getFullYear();
+        const mm = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(currentDate.getDate()).padStart(2, '0');
+        setVal(`${yyyy}-${mm}-${dd}`);
+    };
+
+    const daysLeft = useMemo(() => {
+        if (!val) return null;
+        const d1 = new Date(val);
+        d1.setHours(0, 0, 0, 0);
+        const d2 = new Date();
+        d2.setHours(0, 0, 0, 0);
+        const diffTime = d1 - d2;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }, [val]);
+
+    const formatReadableDate = (dateStr) => {
+        if (!dateStr) return "غير محدد";
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    };
+
+    const isExpired = currentDateExpire && new Date(currentDateExpire) < new Date();
+
+    const editorCell = (
+        <div
+            onClick={handleEditClick}
+            style={{
+                background: "var(--bg-surface)", padding: "1.25rem", borderRadius: "12px",
+                border: `1px solid ${isExpired ? "var(--red)" : "var(--border)"}`, display: "flex", flexDirection: "column",
+                justifyContent: "space-between", cursor: "pointer", transition: "all 0.2s"
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.borderColor = isExpired ? "var(--red)" : "var(--accent)"}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = isExpired ? "var(--red)" : "var(--border)"}
+            title="تعديل تاريخ الانتهاء"
+        >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                    <Calendar size={16} color={isExpired ? "var(--red)" : "var(--accent)"} /> صلاحية الاشتراك
+                </div>
+                {isExpired && <div style={{ fontSize: "0.75rem", fontWeight: 800, background: "var(--red-soft)", color: "var(--red)", padding: "0.15rem 0.5rem", borderRadius: "6px" }}>منتهي</div>}
             </div>
-        );
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: isExpired ? "var(--red-soft)" : "var(--bg-hover)", padding: "0.5rem 0.75rem", borderRadius: "8px", border: `1px dashed ${isExpired ? "var(--red)" : "var(--border)"}`, width: "100%" }}>
+                <span style={{ fontWeight: 800, color: isExpired ? "var(--red)" : "var(--text-primary)", fontSize: "0.95rem" }}>
+                    {currentDateExpire ? currentDateExpire.split("T")[0] : "غير محدد"}
+                </span>
+                <Settings2 size={14} color={isExpired ? "var(--red)" : "var(--text-muted)"} />
+            </div>
+        </div>
+    );
+
+    if (!isEditing) {
+        return editorCell;
     }
 
     return (
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }} onClick={(e) => e.stopPropagation()}>
-            <input
-                type="date"
-                className="form-input"
-                style={{ width: 120, padding: "0.2rem 0.4rem", fontSize: "0.8rem", height: 28 }}
-                value={val}
-                onChange={(e) => setVal(e.target.value)}
-                autoFocus
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSave();
-                    if (e.key === "Escape") { setIsEditing(false); setVal(currentDateExpire ? currentDateExpire.split("T")[0] : ""); }
-                }}
-            />
-            <button
-                onClick={handleSave}
-                disabled={updateExpiry.isPending}
-                className="btn btn-success"
-                style={{ padding: "0.2rem 0.4rem", height: 28 }}
-            >
-                <Save size={13} />
-            </button>
-            <button
-                onClick={() => { setIsEditing(false); setVal(currentDateExpire ? currentDateExpire.split("T")[0] : ""); }}
-                className="btn btn-ghost"
-                style={{ padding: "0.2rem 0.4rem", height: 28 }}
-            >
-                <X size={13} />
-            </button>
-        </div>
+        <>
+            {editorCell}
+            {createPortal(
+                <div className="modal-backdrop" onClick={(e) => { e.stopPropagation(); setIsEditing(false); setVal(currentDateExpire ? currentDateExpire.split("T")[0] : ""); }}>
+                    <div
+                        className="modal-box animate-fade-in"
+                        style={{
+                            padding: "1.5rem",
+                            width: "90%",
+                            maxWidth: "420px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "1rem",
+                            maxHeight: "90vh",
+                            overflowY: "auto"
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", paddingBottom: "1rem" }}>
+                            <h3 style={{ fontSize: "1.1rem", fontWeight: 800, margin: 0, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <Calendar size={20} color="var(--accent)" />
+                                تعديل اشتراك: <span style={{ color: "var(--accent)" }}>{userName || "المستخدم"}</span>
+                            </h3>
+                            <button className="btn btn-ghost" onClick={() => { setIsEditing(false); setVal(currentDateExpire ? currentDateExpire.split("T")[0] : ""); }} style={{ padding: "0.4rem" }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div style={{ background: "var(--bg-surface)", borderRadius: "var(--radius)", padding: "1rem", textAlign: "center", border: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                            <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 700 }}>التاريخ المحدد حالياً:</div>
+                            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: val ? "var(--text-primary)" : "var(--text-muted)" }}>
+                                {formatReadableDate(val)}
+                            </div>
+                            {val && (
+                                <div style={{ alignSelf: "center", background: daysLeft > 0 ? "var(--green-soft)" : daysLeft === 0 ? "var(--gold-soft)" : "var(--red-soft)", color: daysLeft > 0 ? "var(--green)" : daysLeft === 0 ? "var(--gold)" : "var(--red)", padding: "0.25rem 1rem", borderRadius: "999px", fontSize: "0.85rem", fontWeight: 700, display: "inline-block" }}>
+                                    {daysLeft > 0 ? `متبقي ${daysLeft} يوماً` : daysLeft < 0 ? `منتهي منذ ${Math.abs(daysLeft)} يوماً` : "ينتهي اليوم!"}
+                                </div>
+                            )}
+                        </div>
+
+                        <div>
+                            <label style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "0.5rem", display: "block" }}>تحديد تاريخ يدوي:</label>
+                            <input
+                                type="date"
+                                className="form-input"
+                                style={{ width: "100%", padding: "0.85rem", fontSize: "1.1rem", fontWeight: 700, textAlign: "center", background: "var(--bg-card)" }}
+                                value={val}
+                                onChange={(e) => setVal(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+
+                        <div>
+                            <label style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "0.5rem", display: "block" }}>إضافة أو إنقاص سريع:</label>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                                <button onClick={() => addMonths(1)} className="btn btn-secondary" style={{ padding: "0.75rem", fontSize: "0.9rem" }}>+ 1 شهر</button>
+                                <button onClick={() => addMonths(3)} className="btn btn-secondary" style={{ padding: "0.75rem", fontSize: "0.9rem" }}>+ 3 أشهر</button>
+                                <button onClick={() => addMonths(6)} className="btn btn-secondary" style={{ padding: "0.75rem", fontSize: "0.9rem" }}>+ 6 أشهر</button>
+                                <button onClick={() => addMonths(12)} className="btn btn-secondary" style={{ padding: "0.75rem", fontSize: "0.9rem" }}>+ 1 سنة</button>
+                                <button onClick={() => addMonths(-1)} className="btn btn-ghost" style={{ padding: "0.75rem", gridColumn: "1 / -1", color: "var(--red)", border: "1px dashed rgba(239,68,68,0.3)" }}>- إنقاص 1 شهر</button>
+                            </div>
+                        </div>
+
+                        <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+                            <button
+                                onClick={() => { setIsEditing(false); setVal(currentDateExpire ? currentDateExpire.split("T")[0] : ""); }}
+                                className="btn btn-ghost"
+                                style={{ flex: "1 1 auto", padding: "0.75rem", minWidth: "100px" }}
+                            >
+                                إلغاء
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={updateExpiry.isPending}
+                                className="btn btn-primary"
+                                style={{ flex: "2 1 auto", gap: "0.5rem", padding: "0.75rem", fontSize: "1rem", minWidth: "160px" }}
+                            >
+                                {updateExpiry.isPending ? <div className="spinner" style={{ width: 18, height: 18, borderTopColor: "white" }} /> : <Save size={20} />}
+                                حفظ التاريخ
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+        </>
     );
 }
 
-function UserQuotaEditor({ userId, currentQuota, ownerName }) {
+function UserQuotaEditor({ userId, currentQuota, ownerName, accountsLength }) {
     const { t } = useLanguage();
     const updateQuota = useUpdateUserAllowedAccounts();
     const [isEditing, setIsEditing] = useState(false);
@@ -105,33 +216,50 @@ function UserQuotaEditor({ userId, currentQuota, ownerName }) {
         );
     };
 
+    const cellBox = (isEditContent) => (
+        <div
+            onClick={(e) => { if (!isEditing) { e.stopPropagation(); setIsEditing(true); } }}
+            style={{
+                background: "var(--bg-surface)", padding: "1.25rem", borderRadius: "12px",
+                border: `1px solid ${isEditing ? "var(--accent)" : "var(--border)"}`, display: "flex", flexDirection: "column",
+                justifyContent: "space-between", cursor: isEditing ? "default" : "pointer", transition: "all 0.2s"
+            }}
+            onMouseEnter={(e) => { if (!isEditing) e.currentTarget.style.borderColor = "var(--accent)"; }}
+            onMouseLeave={(e) => { if (!isEditing) e.currentTarget.style.borderColor = "var(--border)"; }}
+        >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                    <Users size={16} color="var(--accent)" /> الحسابات والقرى
+                </div>
+                <div style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--text-primary)" }}>{accountsLength}</div>
+            </div>
+            {isEditContent}
+        </div>
+    );
+
     if (!isEditing) {
-        return (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "var(--bg-card)", padding: "0.25rem 0.5rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }}>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>{t("quota")}:</span>
-                <span style={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.85rem" }}>{currentQuota || 0}</span>
-                <button
-                    onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-                    className="btn btn-ghost"
-                    style={{ padding: "0.2rem", height: "auto", color: "var(--text-muted)" }}
-                    title={t("edit")}
-                >
-                    <Settings2 size={13} />
-                </button>
+        return cellBox(
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--bg-hover)", padding: "0.5rem 0.75rem", borderRadius: "8px", border: "1px dashed var(--border)" }}>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600 }}>الحد المسموح:</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <span style={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "1rem" }}>{currentQuota || 0}</span>
+                    <Settings2 size={14} color="var(--text-muted)" />
+                </div>
             </div>
         );
     }
 
-    return (
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }} onClick={(e) => e.stopPropagation()}>
+    return cellBox(
+        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }} onClick={(e) => e.stopPropagation()}>
             <input
                 type="number"
                 min="0"
                 className="form-input"
-                style={{ width: 60, padding: "0.2rem 0.4rem", fontSize: "0.8rem", height: 28 }}
+                style={{ flex: 1, minWidth: 0, padding: "0.35rem 0.5rem", fontSize: "1rem", height: 34, fontWeight: "bold", textAlign: "center" }}
                 value={val}
                 onChange={(e) => setVal(e.target.value)}
                 autoFocus
+                onFocus={(e) => e.target.select()}
                 onKeyDown={(e) => {
                     if (e.key === "Enter") handleSave();
                     if (e.key === "Escape") { setIsEditing(false); setVal(String(currentQuota || 0)); }
@@ -141,16 +269,16 @@ function UserQuotaEditor({ userId, currentQuota, ownerName }) {
                 onClick={handleSave}
                 disabled={updateQuota.isPending}
                 className="btn btn-success"
-                style={{ padding: "0.2rem 0.4rem", height: 28 }}
+                style={{ padding: "0 0.75rem", height: 34 }}
             >
-                <Save size={13} />
+                <Save size={16} />
             </button>
             <button
                 onClick={() => { setIsEditing(false); setVal(String(currentQuota || 0)); }}
                 className="btn btn-ghost"
-                style={{ padding: "0.2rem 0.4rem", height: 28 }}
+                style={{ padding: "0 0.5rem", height: 34 }}
             >
-                <X size={13} />
+                <X size={16} />
             </button>
         </div>
     );
@@ -162,11 +290,9 @@ function UserSubscriptionCard({ user, accounts, allSubs, onDelete }) {
     const updateGlobalDate = useUpdateAllAccountsDate();
     const cancelApproval = useCancelAllAccountsApproval();
 
-    // Find the common approval date for the user's accounts
     const userAccountsDate = useMemo(() => {
         const approved = accounts.filter(a => a.Is_OK && a.Date_OK);
         if (approved.length === 0) return null;
-        // Just return the first one as representative
         return approved[0].Date_OK;
     }, [accounts]);
 
@@ -176,184 +302,95 @@ function UserSubscriptionCard({ user, accounts, allSubs, onDelete }) {
 
     return (
         <div
-            className="card"
+            className="card animate-fade-in"
             style={{
+                padding: "1.5rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "1.25rem",
+                position: "relative",
+                background: "var(--bg-card)",
+                borderColor: hasAlert ? "rgba(239,68,68,0.3)" : "var(--border)",
+                borderWidth: "1px",
+                borderStyle: "solid",
+                borderRadius: "16px",
                 overflow: "hidden",
-                borderColor: hasAlert ? "rgba(239,68,68,0.25)" : "var(--border)",
-                transition: "border-color 0.2s, box-shadow 0.2s, transform 0.15s",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 cursor: "pointer",
+                boxShadow: hasAlert ? "0 4px 20px rgba(239,68,68,0.1)" : "0 2px 10px rgba(0,0,0,0.02)",
             }}
             onClick={() => navigate(`/admin/subscriptions/${user.id}`)}
             onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15)";
-                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = hasAlert ? "0 8px 30px rgba(239,68,68,0.15)" : "0 8px 30px rgba(0,0,0,0.06)";
+                e.currentTarget.style.transform = "translateY(-2px)";
             }}
             onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = "";
-                e.currentTarget.style.transform = "";
+                e.currentTarget.style.boxShadow = hasAlert ? "0 4px 20px rgba(239,68,68,0.1)" : "0 2px 10px rgba(0,0,0,0.02)";
+                e.currentTarget.style.transform = "translateY(0)";
             }}
         >
-            <div style={{
-                padding: "1.1rem 1.25rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "1rem",
-                flexWrap: "wrap",
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
-                    <div style={{
-                        width: 44, height: 44, borderRadius: "50%",
-                        background: hasAlert ? "var(--red-soft)" : "var(--accent-soft)",
-                        border: `2px solid ${hasAlert ? "rgba(239,68,68,0.35)" : "var(--accent)"}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: "1.2rem", fontWeight: 800, color: hasAlert ? "var(--red)" : "var(--accent)",
-                        flexShrink: 0,
-                    }}>
-                        {user.displayName.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
-                            <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--text-primary)" }}>
-                                {user.displayName}
-                            </div>
-                            {userAccountsDate && (
-                                <div style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.3rem",
-                                    fontSize: "0.7rem",
-                                    color: accounts.every(a => a.Is_OK) ? "var(--green)" : "var(--text-muted)",
-                                    fontWeight: 700,
-                                    background: accounts.every(a => a.Is_OK) ? "var(--green-soft)" : "var(--bg-hover)",
-                                    padding: "0.2rem 0.6rem",
-                                    borderRadius: "999px",
-                                    border: `1px solid ${accounts.every(a => a.Is_OK) ? "rgba(16,185,129,0.2)" : "var(--border)"}`
-                                }}>
-                                    <Calendar size={12} />
-                                    {fmtDate(userAccountsDate)}
-                                </div>
-                            )}
-                            {user.isApprovedComp && (
-                                <div style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.3rem",
-                                    fontSize: "0.7rem",
-                                    color: "white",
-                                    fontWeight: 800,
-                                    background: "var(--accent)",
-                                    padding: "0.2rem 0.6rem",
-                                    borderRadius: "999px",
-                                    boxShadow: "0 2px 6px rgba(108, 99, 255, 0.25)"
-                                }}>
-                                    <Check size={12} strokeWidth={4} />
-                                    مستخدم معتمد
-                                </div>
-                            )}
-                            <UserQuotaEditor userId={user.id} currentQuota={user.allowedAccounts} ownerName={user.displayName} />
-                            <UserExpiryEditor userId={user.id} currentDateExpire={user.dateExpire} />
-                        </div>
+            <div style={{ position: "absolute", top: -50, right: -50, width: 150, height: 150, background: hasAlert ? "var(--red)" : "var(--accent)", filter: "blur(60px)", opacity: 0.1, pointerEvents: "none" }} />
 
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", flexWrap: "wrap" }}>
-                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                                <User size={12} /> {accounts.length} {t("accounts")}
-                            </span>
-                            {pendingAccounts > 0 && (
-                                <span style={{ fontSize: "0.7rem", color: "var(--gold)", background: "var(--gold-soft)", padding: "0.1rem 0.4rem", borderRadius: "999px", fontWeight: 700 }}>
-                                    {pendingAccounts} بإنتظار الاعتماد
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", flexDirection: "column" }}>
+                    <div>
+                        <h3 style={{ fontSize: "1.35rem", fontWeight: 900, fontFamily: "Cairo, sans-serif", color: "var(--text-primary)", margin: "0 0 0.5rem 0", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            {user.displayName}
+                            {user.isApprovedComp && (
+                                <span style={{ background: "var(--accent)", color: "white", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(var(--accent-rgb), 0.4)" }} title="مستخدم معتمد">
+                                    <Check size={12} strokeWidth={4} />
                                 </span>
                             )}
-                            {user.dateExpire && (
-                                <span style={{ fontSize: "0.75rem", color: isExpired ? "var(--red)" : "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem", fontWeight: isExpired ? 700 : 400 }}>
-                                    <Calendar size={12} /> انتهاء: {fmtDate(user.dateExpire)}
+                        </h3>
+                        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                            {userAccountsDate && (
+                                <span style={{ fontSize: "0.75rem", fontWeight: 700, background: "var(--green-soft)", color: "var(--green)", padding: "0.2rem 0.6rem", borderRadius: "8px", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                                    <Calendar size={12} /> أقدم قرية: {fmtDate(userAccountsDate)}
+                                </span>
+                            )}
+                            {pendingAccounts > 0 && (
+                                <span style={{ fontSize: "0.75rem", fontWeight: 800, background: "var(--gold-soft)", color: "var(--gold)", padding: "0.2rem 0.6rem", borderRadius: "8px", display: "flex", alignItems: "center", gap: "0.3rem", animation: "pulse-glow 2s infinite" }}>
+                                    <AlertCircle size={12} /> {pendingAccounts} قيد الانتظار
                                 </span>
                             )}
                         </div>
                     </div>
                 </div>
 
-                <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.625rem",
-                    marginLeft: t("dir") === "ltr" ? "auto" : "unset",
-                    marginRight: t("dir") === "rtl" ? "auto" : "unset",
-                    paddingTop: "0.5rem"
-                }}>
-                    <div style={{ textAlign: "end", marginLeft: "0.5rem", marginRight: "0.5rem", display: "none", minWidth: "80px" }}>
-                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.1rem" }}>{t("status")}</div>
-                    </div>
-
-                    {/* Approve All Button */}
+                <div style={{ display: "flex", gap: "0.5rem", zIndex: 1 }}>
                     <button
                         className="btn"
-                        style={{
-                            width: 38, height: 38, borderRadius: "var(--radius-sm)", padding: 0,
-                            background: "var(--green-soft)", color: "var(--green)",
-                            border: "1px solid rgba(16,185,129,0.2)",
-                            boxShadow: "0 2px 8px rgba(16,185,129,0.08)"
-                        }}
-                        title="اعتماد كافة حسابات المستخدم (تأريخ اليوم)"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm(`هل أنت متأكد من رغبتك في اعتماد كافة حسابات ${user.displayName} بتأريخ اليوم؟`)) {
-                                updateGlobalDate.mutate({
-                                    userId: user.id,
-                                });
-                            }
-                        }}
-                        disabled={updateGlobalDate.isPending || cancelApproval.isPending}
+                        style={{ width: 40, height: 40, borderRadius: "10px", padding: 0, background: "var(--green-soft)", color: "var(--green)", border: "1px solid rgba(16,185,129,0.2)" }}
+                        title="اعتماد كافة حسابات المستخدم"
+                        onClick={(e) => { e.stopPropagation(); if (window.confirm(`اعتماد كافة الحسابات لـ ${user.displayName}؟`)) updateGlobalDate.mutate({ userId: user.id }); }}
+                        disabled={updateGlobalDate.isPending}
                     >
                         {updateGlobalDate.isPending ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <CheckCircle2 size={18} />}
                     </button>
-
-                    {/* Cancel Approval All Button */}
                     <button
                         className="btn"
-                        style={{
-                            width: 38, height: 38, borderRadius: "var(--radius-sm)", padding: 0,
-                            background: "var(--gold-soft)", color: "var(--gold)",
-                            border: "1px solid rgba(245,158,11,0.2)",
-                            boxShadow: "0 2px 8px rgba(245,158,11,0.08)"
-                        }}
-                        title="إلغاء اعتماد كافة حسابات المستخدم"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm(`هل أنت متأكد من رغبتك في إلغاء اعتماد كافة حسابات ${user.displayName}؟`)) {
-                                cancelApproval.mutate(user.id);
-                            }
-                        }}
-                        disabled={cancelApproval.isPending || updateGlobalDate.isPending}
+                        style={{ width: 40, height: 40, borderRadius: "10px", padding: 0, background: "var(--gold-soft)", color: "var(--gold)", border: "1px solid rgba(245,158,11,0.2)" }}
+                        title="إلغاء الاعتماد"
+                        onClick={(e) => { e.stopPropagation(); if (window.confirm(`إلغاء الاعتماد لـ ${user.displayName}؟`)) cancelApproval.mutate(user.id); }}
+                        disabled={cancelApproval.isPending}
                     >
                         {cancelApproval.isPending ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <XCircle size={18} />}
                     </button>
-
-                    {/* Delete button */}
                     <button
                         className="btn"
-                        style={{
-                            width: 38, height: 38, borderRadius: "var(--radius-sm)", padding: 0,
-                            background: "var(--red-soft)", color: "var(--red)",
-                            border: "1px solid rgba(239,68,68,0.2)",
-                            boxShadow: "0 2px 8px rgba(239,68,68,0.08)"
-                        }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(user, accounts.length);
-                        }}
-                        disabled={updateGlobalDate.isPending || cancelApproval.isPending}
+                        style={{ width: 40, height: 40, borderRadius: "10px", padding: 0, background: "var(--red-soft)", color: "var(--red)", border: "1px solid rgba(239,68,68,0.2)" }}
+                        title="حذف المستخدم نهائياً"
+                        onClick={(e) => { e.stopPropagation(); onDelete(user, accounts.length); }}
                     >
                         <Trash2 size={18} />
                     </button>
-
-                    <div style={{ width: 38, height: 38, borderRadius: "var(--radius-sm)", background: "var(--bg-hover)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", cursor: "pointer" }}>
-                        <ExternalLink size={16} />
-                    </div>
                 </div>
             </div>
 
-
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+                <UserQuotaEditor userId={user.id} currentQuota={user.allowedAccounts} ownerName={user.displayName} accountsLength={accounts.length} />
+                <UserExpiryEditor userId={user.id} currentDateExpire={user.dateExpire} userName={user.displayName} />
+            </div>
         </div>
     );
 }
@@ -422,7 +459,7 @@ export default function SubscriptionsAdmin() {
         <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
                 <div>
-                    <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.25rem" }}>إدارة المستخدمين والاشتراكات</h1>
+                    <h1 className="text-xl font-bold md:text-4xl">إدارة المستخدمين والاشتراكات</h1>
                 </div>
                 <button className="btn btn-secondary" style={{ gap: "0.5rem" }} onClick={() => refetch()}>
                     <RefreshCw size={15} /> {t("refresh")}

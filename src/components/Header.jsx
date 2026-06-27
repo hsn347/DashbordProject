@@ -122,9 +122,7 @@ export default function Header({ onMenuClick, isAdmin }) {
                             <img src={config.logo} alt={config.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         </div>
                     )}
-                    <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--text-primary)" }}>
-                        {isAdmin ? t("adminPanel") : config.name}
-                    </span>
+
                 </div>
             </div>
 
