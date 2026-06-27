@@ -57,6 +57,29 @@
     --card-glass-border: rgba(108, 99, 255, 0.20);
   }
 
+  /* ── SharkGo Domain Override (sky-blue) ── */
+  [data-domain="sharkgo"] {
+    --accent: #00bcd4;
+    --accent-hover: #00e5ff;
+    --accent-soft: rgba(0, 188, 212, 0.15);
+    --accent-glow: rgba(0, 188, 212, 0.35);
+    --gold: #00acc1;
+    --gold-soft: rgba(0, 172, 193, 0.15);
+    --glow: 0 0 20px rgba(0, 188, 212, 0.35);
+    --card-glass-border: rgba(0, 188, 212, 0.25);
+  }
+
+  [data-domain="sharkgo"][data-theme="light"] {
+    --accent: #0097a7;
+    --accent-hover: #00bcd4;
+    --accent-soft: rgba(0, 151, 167, 0.12);
+    --accent-glow: rgba(0, 151, 167, 0.25);
+    --gold: #00838f;
+    --gold-soft: rgba(0, 131, 143, 0.12);
+    --glow: 0 0 20px rgba(0, 151, 167, 0.2);
+    --card-glass-border: rgba(0, 151, 167, 0.2);
+  }
+
   * {
     box-sizing: border-box;
     margin: 0;

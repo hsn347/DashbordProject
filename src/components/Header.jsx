@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { LogOut, Menu, User, ShieldCheck, Sun, Moon, Monitor, Globe, ChevronDown } from "lucide-react";
+import { LogOut, Menu, User, ShieldCheck, Sun, Moon, Monitor, Globe } from "lucide-react";
 import { useAuthContext } from "../Context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useTheme } from "../Context/ThemeContext";
 import { useLanguage } from "../Context/LanguageContext";
+import { useDomain } from "../Context/DomainContext";
 
 const THEME_OPTIONS = [
     { key: "dark", icon: Moon, labelKey: "themeDark" },
@@ -77,6 +78,7 @@ export default function Header({ onMenuClick, isAdmin }) {
     const navigate = useNavigate();
     const { theme, setTheme } = useTheme();
     const { lang, setLang, t } = useLanguage();
+    const { config } = useDomain();
 
     const [themeOpen, setThemeOpen] = useState(false);
     const [langOpen, setLangOpen] = useState(false);
@@ -114,8 +116,14 @@ export default function Header({ onMenuClick, isAdmin }) {
                 )}
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     {isAdmin && <ShieldCheck size={16} color="var(--gold)" />}
+                    {/* Domain logo */}
+                    {config.logoType === "image" && (
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", border: "1.5px solid var(--accent)", flexShrink: 0 }}>
+                            <img src={config.logo} alt={config.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        </div>
+                    )}
                     <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--text-primary)" }}>
-                        {isAdmin ? t("adminPanel") : t("appName")}
+                        {isAdmin ? t("adminPanel") : config.name}
                     </span>
                 </div>
             </div>

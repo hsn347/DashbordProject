@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuthContext } from "../Context/AuthContext";
 import { toast } from "sonner";
+import { detectDomain } from "../Context/DomainContext";
 
 export function useGetAccounts() {
     const { user } = useAuthContext();
@@ -26,10 +27,11 @@ export function useAddAccount() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ email, password, collect_resources, attack_resources, protection, troops, not_store, animal }) => {
+            const currentDomain = detectDomain();
             const { count, error2 } = await supabase.from("Accounts").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("Is_OK", true);
             const { data: profile, error3 } = await supabase
                 .from("profiles")
-                .select("allowed_accounts, Is_COMP") // لاحظ الفاصلة داخل النص
+                .select("allowed_accounts, Is_COMP")
                 .eq("id", user.id)
                 .single();
 
@@ -49,7 +51,8 @@ export function useAddAccount() {
                     Is_OK: aaa,
                     user_id: String(user.id),
                     Date_OK: bbb,
-                    Id_Emulators: null,// No longer using emulators
+                    Id_Emulators: null,
+                    domain: currentDomain,
                 })
                 .select()
                 .single();
@@ -59,8 +62,8 @@ export function useAddAccount() {
             if (profile.Is_COMP == true && profile.allowed_accounts > count) {
                 try {
                     await supabase.rpc("reindex_accounts_v2");
-                } catch (rpcErr) {
-                    console.warn("Auto-approve RPC failed:", rpcErr);
+                } catch (_) {
+                    // Silent fail - non-critical
                 }
             }
             return data;

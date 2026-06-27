@@ -54,6 +54,8 @@ const translations = {
         adminSection: "الإدارة",
         menu: "القائمة",
         dashboard: "لوحة التحكم",
+        expiringAccounts: "حسابات منتهية",
+        domainsStats: "إحصاءات الدومينات",
 
         // ── Login ──
         login: "تسجيل الدخول",
@@ -277,6 +279,8 @@ const translations = {
         adminSection: "Admin",
         menu: "Menu",
         dashboard: "Dashboard",
+        expiringAccounts: "Expiring Accounts",
+        domainsStats: "Domain Statistics",
 
         // ── Login ──
         login: "Sign In",
@@ -500,6 +504,8 @@ const translations = {
         adminSection: "Yönetim",
         menu: "Menü",
         dashboard: "Panel",
+        expiringAccounts: "Süresi Dolan Hesaplar",
+        domainsStats: "Alan İstatistikleri",
 
         // ── Login ──
         login: "Giriş Yap",

@@ -8,6 +8,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './Context/AuthContext.jsx'
 import { ThemeProvider } from './Context/ThemeContext.jsx'
 import { LanguageProvider } from './Context/LanguageContext.jsx'
+import { DomainProvider } from './Context/DomainContext.jsx'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -23,26 +24,28 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <ThemeProvider>
-        <LanguageProvider>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <App />
-              <Toaster
-                position="bottom-right"
-                toastOptions={{
-                  style: {
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-primary)',
-                  },
-                }}
-              />
-            </AuthProvider>
-            <ReactQueryDevtools initialIsOpen={false} />
-          </QueryClientProvider>
-        </LanguageProvider>
-      </ThemeProvider>
+      <DomainProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <QueryClientProvider client={queryClient}>
+              <AuthProvider>
+                <App />
+                <Toaster
+                  position="bottom-right"
+                  toastOptions={{
+                    style: {
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-primary)',
+                    },
+                  }}
+                />
+              </AuthProvider>
+              <ReactQueryDevtools initialIsOpen={false} />
+            </QueryClientProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </DomainProvider>
     </BrowserRouter>
   </StrictMode>
 )

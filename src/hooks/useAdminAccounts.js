@@ -1,14 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabaseAdmin } from "../lib/supabase";
 import { toast } from "sonner";
+import { detectDomain } from "../Context/DomainContext";
 
 export function useGetAllAccounts() {
+    const currentDomain = detectDomain();
     return useQuery({
-        queryKey: ["admin-accounts"],
+        queryKey: ["admin-accounts", currentDomain],
         queryFn: async () => {
             const { data: accounts, error: accErr } = await supabaseAdmin
                 .from("Accounts")
                 .select("*")
+                .eq("domain", currentDomain)
                 .order("id", { ascending: true });
             if (accErr) throw accErr;
 
@@ -23,7 +26,10 @@ export function useGetAllAccounts() {
                     ])
                 );
 
-                const { data: profiles } = await supabaseAdmin.from("profiles").select("id, allowed_accounts, Is_COMP");
+                const { data: profiles } = await supabaseAdmin
+                    .from("profiles")
+                    .select("id, allowed_accounts, Is_COMP")
+                    .eq("domain", currentDomain);
                 profilesMap = Object.fromEntries(
                     (profiles || []).map(p => [p.id, { quota: p.allowed_accounts || 0, isComp: !!p.Is_COMP }])
                 );
@@ -223,8 +229,9 @@ export function useForceGlobalApply() {
 }
 
 export function useGetAllAdminUsers() {
+    const currentDomain = detectDomain();
     return useQuery({
-        queryKey: ["admin-users-profiles"],
+        queryKey: ["admin-users-profiles", currentDomain],
         queryFn: async () => {
             let users = [];
             let profilesMap = {};
@@ -233,13 +240,19 @@ export function useGetAllAdminUsers() {
                 // Fetch Auth Users
                 const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
                 if (authErr) throw authErr;
-                users = authData.users || [];
 
-                // Fetch Profiles (for allowed_accounts)
+                // Fetch Profiles filtered by domain
                 const { data: profiles, error: profErr } = await supabaseAdmin
                     .from("profiles")
-                    .select("id, allowed_accounts, Is_COMP, Date_expier, Date_OK");
+                    .select("id, allowed_accounts, Is_COMP, Date_expier, Date_OK")
+                    .eq("domain", currentDomain);
                 if (profErr) throw profErr;
+
+                // Build a set of user IDs that belong to this domain
+                const domainUserIds = new Set((profiles || []).map(p => p.id));
+
+                // Filter auth users to only those in this domain
+                users = (authData.users || []).filter(u => domainUserIds.has(u.id));
 
                 profilesMap = Object.fromEntries(
                     (profiles || []).map(p => [p.id, {

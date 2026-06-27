@@ -20,6 +20,7 @@ const SubscriptionsAdmin = lazy(() => import("./pages/admin/SubscriptionsAdmin")
 const UserSubscriptionDetail = lazy(() => import("./pages/admin/UserSubscriptionDetail"));
 const SettingsAdmin = lazy(() => import("./pages/admin/SettingsAdmin"));
 const ExpiringAccounts = lazy(() => import("./pages/admin/ExpiringAccounts"));
+const DomainsStats = lazy(() => import("./pages/admin/DomainsStats"));
 
 function ProtectedRoute({ children, adminRequired = false }) {
   const { user, isAdmin, isLoading } = useAuthContext();
@@ -87,6 +88,7 @@ function App() {
           <Route path="subscriptions" element={<SubscriptionsAdmin />} />
           <Route path="subscriptions/:userId" element={<UserSubscriptionDetail />} />
           <Route path="expiring-accounts" element={<ExpiringAccounts />} />
+          <Route path="domains-stats" element={<DomainsStats />} />
           <Route path="settings" element={<SettingsAdmin />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Route>

@@ -3,16 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuthContext } from "../Context/AuthContext";
-import { ADMIN_EMAIL } from "../Context/AuthContext";
-import { Eye, EyeOff, LogIn, Shield, Sword, Globe } from "lucide-react";
+import { useDomain } from "../Context/DomainContext";
+import { Eye, EyeOff, LogIn, Shield, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "../Context/LanguageContext";
 
-const ADMIN_PASSWORD = "zxcvbnmwwee5#";
-
 export default function Login() {
   const navigate = useNavigate();
-  const { loginAsAdmin } = useAuthContext();
+  const { loginAsAdmin, domainAdminEmail, domainAdminPassword } = useAuthContext();
+  const { config } = useDomain();
   const { t, dir, lang, setLang } = useLanguage();
   const [mode, setMode] = useState("login");
   const [showPass, setShowPass] = useState(false);
@@ -22,7 +21,7 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }) => {
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      if (email === domainAdminEmail && password === domainAdminPassword) {
         loginAsAdmin();
         return { isAdmin: true };
       }
@@ -44,9 +43,11 @@ export default function Login() {
         options: { data: { display_name: name } },
       });
       if (error) throw error;
+      const currentDomain = window.location.hostname;
       const { data: d, error: error2 } = await supabase.from("profiles").update({
         username: email,
-        full_name: name
+        full_name: name,
+        domain: currentDomain,
       }).eq("id", data.user.id)
       if (error2) throw error;
       return data;
@@ -101,11 +102,17 @@ export default function Login() {
       <div className="animate-fade-in card-glass" style={{ width: "100%", maxWidth: 440, padding: "2.5rem" }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <div style={{ width: 64, height: 64, background: "var(--accent-soft)", border: "2px solid var(--accent)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem", animation: "pulse-glow 2s infinite" }}>
-            <Sword size={28} color="var(--accent)" />
-          </div>
+          {config.logoType === "image" ? (
+            <div style={{ width: 80, height: 80, margin: "0 auto 1rem", animation: "pulse-glow 2s infinite", borderRadius: "50%", overflow: "hidden", border: "2px solid var(--accent)", boxShadow: "0 0 20px var(--accent-glow)" }}>
+              <img src={config.logo} alt={config.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+          ) : (
+            <div style={{ width: 64, height: 64, background: "var(--accent-soft)", border: "2px solid var(--accent)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem", animation: "pulse-glow 2s infinite" }}>
+              <Shield size={28} color="var(--accent)" />
+            </div>
+          )}
           <h1 style={{ fontSize: "1.5rem", fontWeight: 800, background: "linear-gradient(135deg, var(--accent), var(--gold))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", marginBottom: "0.25rem" }}>
-            {t("appName")}
+            {config.name}
           </h1>
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
             {mode === "login" ? t("login") : t("newAccount")}
